@@ -1,0 +1,236 @@
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.chat-list-header {
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.chat-list-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+  color: var(--text-primary);
+}
+
+.chat-count {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.chat-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-1);
+  position: relative;
+}
+
+.chat-item:hover {
+  background: var(--bg-hover);
+}
+
+.chat-item.active {
+  background: var(--gradient-1);
+  box-shadow: var(--shadow-md);
+}
+
+.chat-item.active .chat-name,
+.chat-item.active .chat-preview,
+.chat-item.active .chat-time,
+.chat-item.active .sender-name {
+  color: white;
+}
+
+.chat-item.active .status-dot {
+  border-color: var(--primary-color);
+}
+
+.chat-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-avatar,
+.chat-avatar-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-1);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  transition: all var(--transition-fast);
+}
+
+.status-dot.online {
+  background: var(--online-color);
+}
+
+.status-dot.offline {
+  background: var(--offline-color);
+}
+
+.status-dot.group {
+  background: var(--secondary-color);
+}
+
+.chat-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.chat-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.chat-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.chat-preview {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.sender-name {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.chat-item.active .sender-name {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.file-indicator {
+  color: var(--secondary-color);
+  margin-right: var(--space-1);
+}
+
+.chat-item.active .file-indicator {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.unread-badge {
+  background: var(--gradient-1);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  animation: pulse 2s infinite;
+  min-width: 22px;
+  text-align: center;
+}
+
+.chat-item.active .unread-badge {
+  background: white;
+  color: var(--primary-color);
+}
+
+.group-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  font-weight: 500;
+}
+
+.chat-item.active .group-indicator {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Empty State */
+.chat-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.chat-list-empty svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-list-header {
+    padding: var(--space-4);
+  }
+  
+  .chat-item {
+    padding: var(--space-3);
+  }
+  
+  .chat-avatar,
+  .chat-avatar-placeholder {
+    width: 48px;
+    height: 48px;
+  }
+}

@@ -1,0 +1,226 @@
+.message-input-container {
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  padding: var(--space-3) var(--space-4);
+  flex-shrink: 0;
+}
+
+.file-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--border-color);
+  animation: fadeIn 0.2s ease;
+}
+
+.file-preview-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.file-preview-info svg {
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.file-size {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.message-input-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.input-wrapper {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.message-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.message-input:focus {
+  border-color: var(--primary-color);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.message-input::placeholder {
+  color: var(--text-muted);
+}
+
+.attach-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.attach-btn:hover {
+  color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.attach-btn:active {
+  transform: scale(0.95);
+}
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.send-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+.send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--text-muted);
+  box-shadow: none;
+}
+
+.send-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Emoji & Attachment Menu */
+.attachment-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  animation: fadeIn 0.15s ease;
+}
+
+.attachment-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  min-width: 64px;
+}
+
+.attachment-option:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.attachment-option svg {
+  width: 24px;
+  height: 24px;
+}
+
+.attachment-option span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .message-input-container {
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  .message-input {
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  .send-btn,
+  .attach-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .file-name {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-input-form {
+    gap: var(--space-1);
+  }
+  
+  .send-btn,
+  .attach-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .file-name {
+    max-width: 120px;
+  }
+}
