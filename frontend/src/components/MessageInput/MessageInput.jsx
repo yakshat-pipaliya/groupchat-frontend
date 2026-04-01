@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Image, File, X, Film, FileText, Music } from 'lucide-react';
+import { Image, File, X, Film, FileText, Music, Paperclip } from 'lucide-react';
 import { useChat } from '../../contexts/ChatContext';
 import './MessageInput.css';
 
@@ -74,7 +74,7 @@ const MessageInput = ({ chatId }) => {
           className="btn-icon attach-btn"
           onClick={() => fileInputRef.current?.click()}
         >
-          <File size={20} />
+          <Paperclip size={24} />
         </button>
 
         <div className="input-wrapper">
@@ -82,7 +82,7 @@ const MessageInput = ({ chatId }) => {
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={selectedFile ? "Add a caption (optional)..." : "Type a message..."}
+            placeholder="Type a message here .."
             className="message-input"
           />
         </div>

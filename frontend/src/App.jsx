@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Home from './pages/Home/Home';
 import Login from './pages/Login/Login';
@@ -10,6 +10,41 @@ import './App.css';
 function AppContent() {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState('home');
+
+  // Initialize current view from URL on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/profile') {
+      setCurrentView('profile');
+    } else {
+      setCurrentView('home');
+    }
+  }, []);
+
+  // Update URL when view changes
+  const updateView = (view) => {
+    setCurrentView(view);
+    if (view === 'profile') {
+      window.history.pushState({}, '', '/profile');
+    } else {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/profile') {
+        setCurrentView('profile');
+      } else {
+        setCurrentView('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   if (loading) {
     return (
@@ -28,9 +63,9 @@ function AppContent() {
   const renderView = () => {
     switch(currentView) {
       case 'profile':
-        return <Profile />;
+        return <Profile onBackToHome={() => updateView('home')} />;
       default:
-        return <Home onProfileClick={() => setCurrentView('profile')} />;
+        return <Home onProfileClick={() => updateView('profile')} />;
     }
   };
 

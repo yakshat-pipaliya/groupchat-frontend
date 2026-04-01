@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       const fcmToken = await getFCMToken();
       
       // Always attempt login with or without FCM token
-      const response = await loginWithFCM(email, password, fcmToken);
+      const response = await loginWithFCM(email, password, fcmToken === null ? '' : fcmToken);
       
       // Handle the response structure
       const { data } = response;

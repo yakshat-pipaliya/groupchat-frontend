@@ -3,6 +3,7 @@ import {
   Trash2,
   FileText,
   MoreVertical,
+  CheckCheck,
 } from "lucide-react";
 import { useChat } from "../../contexts/ChatContext";
 import "./Message.css";
@@ -13,16 +14,17 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
   const { getUser, formatTime } = useChat();
   const menuRef = useRef(null);
 
-  // ✅ Close menu on outside click
+  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setShowMenu(false);
       }
     };
-    document.addEventListener("click", handleClickOutside);
+    // Use mousedown instead of click for better responsiveness
+    document.addEventListener("mousedown", handleClickOutside);
     return () =>
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleDelete = (deleteForAll = false) => {
@@ -38,11 +40,48 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
+  const getAttachmentType = () => {
+    const fileType = message.file?.type || "";
+
+    if (fileType.startsWith("image/") || fileType === "image" || message.type === "image") {
+      return "image";
+    }
+
+    if (fileType.startsWith("video/") || fileType === "video" || message.type === "video") {
+      return "video";
+    }
+
+    if (fileType.startsWith("audio/") || fileType === "audio" || message.type === "audio") {
+      return "audio";
+    }
+
+    return "file";
+  };
+
+  const getMediaSourceType = () => {
+    const fileType = message.file?.type || "";
+    const fileUrl = (message.file?.url || "").split("?")[0].toLowerCase();
+
+    if (fileType.includes("/")) {
+      return fileType;
+    }
+
+    if (fileUrl.endsWith(".webm")) return "video/webm";
+    if (fileUrl.endsWith(".mp4")) return "video/mp4";
+    if (fileUrl.endsWith(".mov")) return "video/quicktime";
+    if (fileUrl.endsWith(".ogg")) return "audio/ogg";
+    if (fileUrl.endsWith(".mp3")) return "audio/mpeg";
+    if (fileUrl.endsWith(".wav")) return "audio/wav";
+    if (fileUrl.endsWith(".m4a")) return "audio/mp4";
+
+    return "";
+  };
+
   const renderFile = () => {
     if (!message.file) return null;
+    const attachmentType = getAttachmentType();
 
-    // Handle images
-    if (message.file.type.startsWith('image/')) {
+    if (attachmentType === "image") {
       return (
         <div className="image-preview">
           <img 
@@ -54,19 +93,30 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
       );
     }
 
-    // Handle videos
-    if (message.file.type.startsWith('video/')) {
+    if (attachmentType === "video") {
+      const sourceType = getMediaSourceType();
       return (
         <div className="video-preview">
           <video controls>
-            <source src={message.file.url} type={message.file.type} />
+            <source src={message.file.url} type={sourceType || undefined} />
             Your browser does not support the video tag.
           </video>
         </div>
       );
     }
 
-    // Handle documents (fallback)
+    if (attachmentType === "audio") {
+      const sourceType = getMediaSourceType();
+      return (
+        <div className="audio-preview">
+          <audio controls>
+            <source src={message.file.url} type={sourceType || undefined} />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      );
+    }
+
     return (
       <div className="file-preview document-preview">
         <FileText size={24} />
@@ -82,10 +132,20 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
   };
 
   const sender = getUser(message.sender);
+  
+  // Format time like WhatsApp (e.g., "08:58", "13:20")
+  const formatMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false 
+    });
+  };
 
   return (
     <div className={`message ${isCurrentUser ? "sent" : "received"}`}>
-      {/* Avatar */}
+      {/* Avatar for received messages */}
       {!isCurrentUser && (
         <div className="message-avatar">
           {sender?.avatar ? (
@@ -105,19 +165,25 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
         )}
 
         <div className="message-bubble">
-          {message.type === "file" && renderFile()}
+          {message.file && renderFile()}
           {message.text && <p>{message.text}</p>}
 
           <div className="message-meta">
-            <span>{new Date(message.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            <span>{formatMessageTime(message.timestamp)}</span>
+            {isCurrentUser && (
+              <span className={`read-status-ticks ${message.isRead ? 'read' : ''}`}>
+                <CheckCheck size={14} />
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions for sent messages */}
       {isCurrentUser && (
-        <div className="message-actions" ref={menuRef}>
+        <div className="message-actions-container" ref={menuRef}>
           <button
+            className="message-actions-btn"
             onClick={(e) => {
               e.stopPropagation();
               setShowMenu(!showMenu);

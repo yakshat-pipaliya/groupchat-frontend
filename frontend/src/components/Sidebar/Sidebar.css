@@ -195,3 +195,463 @@
   color: var(--error-color);
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1001;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.mobile-menu-toggle:hover {
+  background: var(--bg-hover);
+  transform: scale(1.05);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: var(--sidebar-width);
+    min-width: 220px;
+    padding: var(--space-4) var(--space-3);
+  }
+  
+  .logo-text {
+    font-size: 18px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-3) var(--space-3);
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    width: var(--sidebar-width);
+    min-width: 200px;
+    padding: var(--space-4) var(--space-2);
+  }
+  
+  .sidebar-header {
+    margin-bottom: 20px;
+  }
+  
+  .logo {
+    gap: 10px;
+  }
+  
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .logo-text {
+    font-size: 16px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: 12px;
+    margin-bottom: var(--space-5);
+  }
+  
+  .nav-item {
+    padding: var(--space-2) var(--space-2);
+    font-size: 13px;
+  }
+  
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .avatar-text {
+    font-size: 11px;
+  }
+  
+  .user-name {
+    font-size: 13px;
+  }
+  
+  .user-status {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    height: 100vh;
+    padding: var(--space-4) var(--space-3);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+  }
+  
+  .sidebar-header {
+    margin-bottom: var(--space-4);
+  }
+  
+  .logo {
+    gap: var(--space-2);
+  }
+  
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .logo-text {
+    font-size: 15px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-3) var(--space-3);
+    font-size: 13px;
+    margin-bottom: var(--space-4);
+  }
+  
+  .sidebar-nav {
+    flex: 1;
+    gap: var(--space-1);
+  }
+  
+  .nav-item {
+    padding: var(--space-3) var(--space-2);
+    font-size: 13px;
+    margin-bottom: var(--space-1);
+    min-height: 44px;
+  }
+  
+  .nav-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    min-width: 18px;
+  }
+  
+  .sidebar-footer {
+    padding-top: var(--space-3);
+    gap: var(--space-2);
+  }
+  
+  .user-profile {
+    padding: var(--space-2);
+    gap: var(--space-2);
+    min-height: 44px;
+  }
+  
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .avatar-text {
+    font-size: 10px;
+  }
+  
+  .online-badge {
+    width: 8px;
+    height: 8px;
+    border-width: 1px;
+  }
+  
+  .user-info {
+    gap: 2px;
+  }
+  
+  .user-name {
+    font-size: 12px;
+  }
+  
+  .user-status {
+    font-size: 10px;
+  }
+  
+  .logout-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    padding: var(--space-3) var(--space-2);
+  }
+  
+  .sidebar-header {
+    margin-bottom: var(--space-3);
+  }
+  
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .logo-text {
+    font-size: 14px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-2) var(--space-2);
+    font-size: 12px;
+    margin-bottom: var(--space-3);
+  }
+  
+  .nav-item {
+    padding: var(--space-2) var(--space-2);
+    font-size: 12px;
+  }
+  
+  .nav-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    min-width: 16px;
+  }
+  
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .avatar-text {
+    font-size: 9px;
+  }
+  
+  .online-badge {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .user-name {
+    font-size: 11px;
+  }
+  
+  .user-status {
+    font-size: 9px;
+  }
+  
+  .logout-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    padding: var(--space-2);
+  }
+  
+  .sidebar-header {
+    margin-bottom: var(--space-2);
+  }
+  
+  .logo {
+    gap: var(--space-1);
+  }
+  
+  .logo-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .logo-text {
+    font-size: 13px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-2);
+    font-size: 11px;
+    margin-bottom: var(--space-2);
+  }
+  
+  .nav-item {
+    padding: var(--space-2);
+    font-size: 11px;
+  }
+  
+  .nav-badge {
+    font-size: 8px;
+    padding: 1px 4px;
+    min-width: 14px;
+  }
+  
+  .sidebar-footer {
+    padding-top: var(--space-2);
+  }
+  
+  .user-profile {
+    padding: var(--space-1);
+    gap: var(--space-1);
+  }
+  
+  .user-avatar {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .avatar-text {
+    font-size: 8px;
+  }
+  
+  .online-badge {
+    width: 5px;
+    height: 5px;
+  }
+  
+  .user-name {
+    font-size: 10px;
+  }
+  
+  .user-status {
+    font-size: 8px;
+  }
+  
+  .logout-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 360px) {
+  .sidebar {
+    padding: var(--space-1);
+  }
+  
+  .logo-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .logo-text {
+    font-size: 12px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-1);
+    font-size: 10px;
+  }
+  
+  .nav-item {
+    padding: var(--space-1);
+    font-size: 10px;
+  }
+  
+  .nav-badge {
+    font-size: 7px;
+    padding: 1px 3px;
+    min-width: 12px;
+  }
+  
+  .user-avatar {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .avatar-text {
+    font-size: 7px;
+  }
+  
+  .user-name {
+    font-size: 9px;
+  }
+  
+  .user-status {
+    font-size: 7px;
+  }
+  
+  .logout-btn {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .nav-item {
+    min-height: 44px;
+  }
+  
+  .new-chat-btn {
+    min-height: 44px;
+  }
+  
+  .user-profile {
+    min-height: 44px;
+  }
+  
+  .logout-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 600px) and (orientation: landscape) {
+  .sidebar {
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  .sidebar-header {
+    margin-bottom: var(--space-2);
+  }
+  
+  .logo-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .logo-text {
+    font-size: 12px;
+  }
+  
+  .new-chat-btn {
+    padding: var(--space-1) var(--space-2);
+    font-size: 11px;
+    margin-bottom: var(--space-2);
+  }
+}

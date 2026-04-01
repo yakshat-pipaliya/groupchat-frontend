@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { getChatMembers, searchUsers } from '../services/apiService';
 import { formatTime } from '../data/mockData';
 import { useSocket } from './SocketContext';
@@ -26,16 +26,6 @@ export const ChatProvider = ({ children }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState(localStorage.getItem('authToken'));
-  const chatsRef = useRef([]);
-  const messagesRef = useRef({});
-  const lastReadEmitRef = useRef({});
-  const currentUserId = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('userData') || '{}')?._id || null;
-    } catch (error) {
-      return null;
-    }
-  })();
 
   // Socket hooks
   const {
@@ -43,32 +33,26 @@ export const ChatProvider = ({ children }) => {
     getMessages,
     getGroupMessages,
     sendMessage: sendSocketMessage,
+    sendMessageToUser,
     sendGroupMessage,
     onAllMessages,
+    onNewMessage,
     onMessageSent,
     onReceiveMessage,
     onGroupMessages,
     onNewGroupMessage,
     joinChat,
     leaveChat,
-    leaveGroup,
     joinPrivateChat,
     onJoinedChat,
-    onJoinedGroup,
-    onGroupUserJoined,
+    isUserOnline,
     deleteForMe,
     deleteForEveryone,
-    deleteGroupForMe,
-    deleteGroupForEveryone,
     onMessageDeletedForMe,
     onMessageDeletedForEveryone,
-    onGroupMessageDeletedForMe,
-    onGroupMessageDeletedForEveryone,
     onMessagesRead,
     onMarkedAsRead,
-    markMessageAsRead: socketMarkAsRead,
-    markGroupMessagesAsRead,
-    onGroupMessagesRead,
+    markAsRead: markAsReadSocket,
   } = useSocket();
 
   // Wrapper to set active chat with localStorage persistence
@@ -81,117 +65,9 @@ export const ChatProvider = ({ children }) => {
     }
   }, []);
 
-  useEffect(() => {
-    chatsRef.current = chats;
-  }, [chats]);
-
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
-
-  useEffect(() => {
-    setActiveChatState(prevActiveChat => {
-      if (!prevActiveChat) return prevActiveChat;
-
-      const latestChat = chats.find(chat => chat.id === prevActiveChat.id);
-      return latestChat || prevActiveChat;
-    });
-  }, [chats]);
-
-  const updateChatLastMessage = useCallback((chatId, updater) => {
-    setChats(prev => prev.map(chat => {
-      if (chat.id !== chatId || !chat.lastMessage) {
-        return chat;
-      }
-
-      return {
-        ...chat,
-        lastMessage: updater(chat.lastMessage)
-      };
-    }));
-  }, []);
-
-  const getReadEventOtherUserId = useCallback((payload) => {
-    if (!payload) return null;
-
-    return (
-      payload.otherUserId ||
-      payload.userId ||
-      payload.senderId ||
-      payload.receiverId ||
-      payload.data?.otherUserId ||
-      payload.data?.userId ||
-      payload.data?.senderId ||
-      payload.data?.receiverId ||
-      null
-    );
-  }, []);
-
-  const markOutgoingMessagesAsRead = useCallback((otherUserId, activeChatId = null) => {
-    if (!otherUserId) return;
-
-    setMessages(prev => {
-      const possibleKeys = Array.from(new Set([
-        otherUserId,
-        activeChatId,
-      ].filter(Boolean)));
-
-      let hasChanges = false;
-      const nextState = { ...prev };
-
-      possibleKeys.forEach((key) => {
-        if (!prev[key]) return;
-
-        nextState[key] = prev[key].map(msg => {
-          const isCurrentUsersMessage =
-            msg.sender === 'current' || msg.sender === 'currentUser' || msg.sender === currentUserId;
-
-          if (isCurrentUsersMessage && !msg.isRead) {
-            hasChanges = true;
-            return { ...msg, isRead: true };
-          }
-
-          return msg;
-        });
-      });
-
-      return hasChanges ? nextState : prev;
-    });
-
-    updateChatLastMessage(otherUserId, (lastMessage) => {
-      const isCurrentUsersMessage =
-        lastMessage.sender === 'current' ||
-        lastMessage.sender === 'currentUser' ||
-        lastMessage.sender === currentUserId;
-
-      return isCurrentUsersMessage
-        ? { ...lastMessage, isRead: true }
-        : lastMessage;
-    });
-  }, [currentUserId, updateChatLastMessage]);
-
-  const getMessageTypeFromFile = useCallback((file) => {
-    if (!file?.type) return 'file';
-    if (file.type.startsWith('image/')) return 'image';
-    if (file.type.startsWith('video/')) return 'video';
-    if (file.type.startsWith('audio/')) return 'audio';
-    return 'file';
-  }, []);
-
-  const getMessageTypeFromUrl = useCallback((url) => {
-    if (!url) return 'text';
-
-    const normalizedUrl = url.split('?')[0].toLowerCase();
-
-    if (/\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(normalizedUrl)) return 'image';
-    if (/\.(mp4|mov|avi|mkv|webm|m4v)$/i.test(normalizedUrl)) return 'video';
-    if (/\.(mp3|wav|ogg|aac|m4a|flac)$/i.test(normalizedUrl)) return 'audio';
-    return 'file';
-  }, []);
-
   // Transform API message to local format
   const transformSocketMessage = useCallback((msg) => {
-    const messageType = msg.imageUrl ? getMessageTypeFromUrl(msg.imageUrl) : 'text';
+    const isImage = !!msg.imageUrl;
     const senderId = msg.senderId?._id || msg.senderId;
     
     // Ensure imageUrl has proper protocol
@@ -201,21 +77,21 @@ export const ChatProvider = ({ children }) => {
     }
     
     return {
-      id: msg._id || `${senderId || 'system'}-${msg.timestamp || msg.createdAt || Date.now()}-${msg.message || msg.imageUrl || 'message'}`,
+      id: msg._id,
       text: msg.message || '',
       timestamp: msg.timestamp || msg.createdAt,
       sender: senderId,
       senderData: typeof msg.senderId === 'object' ? msg.senderId : { _id: senderId },
-      type: messageType,
+      type: isImage ? 'image' : 'text',
       isRead: msg.isRead || false,
       imageUrl: fullImageUrl,
-      file: fullImageUrl ? {
-        name: fullImageUrl.split('/').pop() || 'attachment',
-        type: messageType,
+      file: isImage ? {
+        name: 'image.png',
+        type: 'image/png',
         url: fullImageUrl
       } : null,
     };
-  }, [getMessageTypeFromUrl]);
+  }, []);
 
   // Transform API data to chat format
   const transformChatData = useCallback((apiData) => {
@@ -240,19 +116,15 @@ export const ChatProvider = ({ children }) => {
     // Transform group chats
     if (apiData.groups) {
       apiData.groups.forEach(group => {
-        const memberCount = Number.isFinite(group.totalMember)
-          ? group.totalMember
-          : group.members?.length || 0;
-
         transformedChats.push({
           id: group._id,
           type: 'group',
           name: group.name,
-          participants: group.members?.map(m => m._id) || [],
+          participants: group.members.map(m => m._id),
           avatar: null,
           lastMessage: null,
           unread: 0,
-          memberCount,
+          memberCount: group.members.length,
           createdBy: group.createdBy
         });
       });
@@ -319,12 +191,6 @@ export const ChatProvider = ({ children }) => {
           
           setChats(transformedChats);
           setUsers(transformedUsers);
-          setActiveChatState(prevActiveChat => {
-            if (!prevActiveChat) return prevActiveChat;
-
-            const refreshedActiveChat = transformedChats.find(chat => chat.id === prevActiveChat.id);
-            return refreshedActiveChat || prevActiveChat;
-          });
         }
       } catch (error) {
         console.error('Failed to load chat members:', error);
@@ -363,15 +229,16 @@ export const ChatProvider = ({ children }) => {
     
     const handleAllMessages = (data) => {
       console.log('Received all_messages event:', data);
-
-      if (!data?.otherUserId || !Array.isArray(data.messages)) return;
-
-      const transformedMessages = data.messages.map(transformSocketMessage);
-
-      setMessages(prev => ({
-        ...prev,
-        [data.otherUserId]: transformedMessages
-      }));
+      
+      if (data.messages && Array.isArray(data.messages)) {
+        const transformedMessages = data.messages.map(transformSocketMessage);
+        
+        // Store messages for this chat
+        setMessages(prev => ({
+          ...prev,
+          [data.otherUserId]: transformedMessages
+        }));
+      }
     };
 
     onAllMessages(handleAllMessages);
@@ -380,21 +247,6 @@ export const ChatProvider = ({ children }) => {
       // Cleanup handled by socket service
     };
   }, [isConnected, onAllMessages, transformSocketMessage]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const handleJoinedGroup = (data) => {
-      console.log('Received joined_group event:', data);
-      if (data?.groupId) {
-        getGroupMessages(data.groupId);
-      }
-    };
-
-    onJoinedGroup(handleJoinedGroup);
-
-    return () => {};
-  }, [isConnected, onJoinedGroup, getGroupMessages]);
 
   // Listen for message_sent confirmation (update temp message)
   useEffect(() => {
@@ -412,10 +264,10 @@ export const ChatProvider = ({ children }) => {
           if (msg.pending && msg.text === data.message) {
             return {
               ...msg,
-              id: data._id || data.messageId || msg.id,
+              id: `msg-${Date.now()}`, // Use server message ID if available
               pending: false,
-              timestamp: data.timestamp || msg.timestamp,
-              isRead: msg.isRead || data.isRead || false
+              timestamp: data.timestamp,
+              isRead: data.isRead || false
             };
           }
           return msg;
@@ -450,7 +302,7 @@ export const ChatProvider = ({ children }) => {
         fullImageUrl = `http://${fullImageUrl}`;
       }
       
-      const messageType = fullImageUrl ? getMessageTypeFromUrl(fullImageUrl) : 'text';
+      const isImage = !!fullImageUrl;
       
       const newMessage = {
         id: `msg-${Date.now()}`,
@@ -458,12 +310,12 @@ export const ChatProvider = ({ children }) => {
         timestamp: data.timestamp,
         sender: senderId,
         senderData: { _id: senderId, email: '', username: '' },
-        type: messageType,
+        type: isImage ? 'image' : 'text',
         isRead: data.isRead || false,
         imageUrl: fullImageUrl,
-        file: fullImageUrl ? {
-          name: fullImageUrl.split('/').pop() || 'attachment',
-          type: messageType,
+        file: isImage ? {
+          name: 'image.png',
+          type: 'image/png',
           url: fullImageUrl
         } : null,
       };
@@ -492,7 +344,6 @@ export const ChatProvider = ({ children }) => {
               text: data.message,
               timestamp: data.timestamp || new Date().toISOString(),
               sender: senderId,
-              isRead: false,
               file: !!data.imageUrl
             },
             unread: activeChat?.id === senderId ? 0 : (chat.unread || 0) + 1
@@ -500,10 +351,6 @@ export const ChatProvider = ({ children }) => {
         }
         return chat;
       }));
-
-      if (activeChat?.type === 'private' && activeChat.id === senderId) {
-        markAsRead(activeChat.id);
-      }
     };
 
     onReceiveMessage(handleReceiveMessage);
@@ -518,16 +365,16 @@ export const ChatProvider = ({ children }) => {
     if (!isConnected) return;
 
     const handleGroupMessages = (data) => {
-      console.log('Received group all_messages:', data);
-
-      if (!data?.groupId || !Array.isArray(data.messages)) return;
-
-      const transformedMessages = data.messages.map(transformSocketMessage);
-
-      setMessages(prev => ({
-        ...prev,
-        [data.groupId]: transformedMessages
-      }));
+      console.log('Received group_messages:', data);
+      
+      if (data.messages && Array.isArray(data.messages)) {
+        const transformedMessages = data.messages.map(transformSocketMessage);
+        
+        setMessages(prev => ({
+          ...prev,
+          [data.groupId]: transformedMessages
+        }));
+      }
     };
 
     onGroupMessages(handleGroupMessages);
@@ -542,40 +389,19 @@ export const ChatProvider = ({ children }) => {
     if (!isConnected) return;
 
     const handleNewGroupMessage = (data) => {
-      console.log('Received receive_group_message:', data);
-
+      console.log('Received new_group_message:', data);
+      
       const message = transformSocketMessage(data);
       const groupId = data.groupId;
-      const isCurrentUsersMessage =
-        (data.senderId?._id || data.senderId) === currentUserId;
       
       setMessages(prev => {
         const existingMessages = prev[groupId] || [];
-
+        
+        // Avoid duplicates
         if (existingMessages.find(m => m.id === message.id)) {
           return prev;
         }
-
-        const pendingIndex = existingMessages.findIndex(m =>
-          m.pending &&
-          m.sender === 'current' &&
-          m.text === message.text &&
-          (!!m.imageUrl === !!message.imageUrl)
-        );
-
-        if (pendingIndex >= 0) {
-          const updatedMessages = [...existingMessages];
-          updatedMessages[pendingIndex] = {
-            ...message,
-            pending: false
-          };
-
-          return {
-            ...prev,
-            [groupId]: updatedMessages
-          };
-        }
-
+        
         return {
           ...prev,
           [groupId]: [...existingMessages, message]
@@ -593,21 +419,11 @@ export const ChatProvider = ({ children }) => {
               sender: data.senderId?._id || data.senderId,
               file: false
             },
-            unread: activeChat?.id === groupId || isCurrentUsersMessage
-              ? 0
-              : (chat.unread || 0) + 1
+            unread: activeChat?.id === groupId ? 0 : (chat.unread || 0) + 1
           };
         }
         return chat;
       }));
-
-      if (activeChat?.type === 'group' && activeChat.id === groupId && !isCurrentUsersMessage) {
-        markAsRead(groupId);
-      }
-
-      if (!data?._id && activeChat?.type === 'group' && activeChat.id === groupId) {
-        getGroupMessages(groupId);
-      }
     };
 
     onNewGroupMessage(handleNewGroupMessage);
@@ -615,83 +431,7 @@ export const ChatProvider = ({ children }) => {
     return () => {
       // Cleanup handled by socket service
     };
-  }, [isConnected, onNewGroupMessage, transformSocketMessage, activeChat, currentUserId, getGroupMessages]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const handleGroupUserJoined = (data) => {
-      console.log('Group user joined:', data);
-
-      if (!data?.groupId) return;
-
-      const joinedUserId =
-        data.userId ||
-        data.joinedUserId ||
-        data.memberId ||
-        data.user?._id ||
-        data.member?._id ||
-        null;
-
-      const explicitMemberCount = Number.isFinite(data.totalMember)
-        ? data.totalMember
-        : Number.isFinite(data.memberCount)
-          ? data.memberCount
-          : null;
-
-      const explicitParticipants = Array.isArray(data.members)
-        ? data.members.map(member => member._id || member).filter(Boolean)
-        : null;
-
-      setChats(prev => prev.map(chat => {
-        if (chat.id !== data.groupId || chat.type !== 'group') {
-          return chat;
-        }
-
-        const currentParticipants = Array.isArray(chat.participants) ? chat.participants : [];
-        const hasJoinedUser = joinedUserId ? currentParticipants.includes(joinedUserId) : false;
-
-        const participants = explicitParticipants
-          ? explicitParticipants
-          : joinedUserId && joinedUserId !== currentUserId && !hasJoinedUser
-            ? [...currentParticipants, joinedUserId]
-            : currentParticipants;
-
-        const memberCount = explicitMemberCount ??
-          (explicitParticipants
-            ? explicitParticipants.length
-            : joinedUserId && joinedUserId !== currentUserId && !hasJoinedUser
-              ? Math.max(chat.memberCount || 0, participants.length)
-              : chat.memberCount);
-
-        return {
-          ...chat,
-          participants,
-          memberCount
-        };
-      }));
-
-      if (activeChat?.type === 'group' && activeChat.id === data.groupId) {
-        getGroupMessages(data.groupId);
-      }
-    };
-
-    onGroupUserJoined(handleGroupUserJoined);
-
-    return () => {};
-  }, [isConnected, onGroupUserJoined, activeChat, getGroupMessages, currentUserId]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const handleGroupMessagesRead = (data) => {
-      console.log('Group messages read event:', data);
-    };
-
-    onGroupMessagesRead(handleGroupMessagesRead);
-
-    return () => {};
-  }, [isConnected, onGroupMessagesRead]);
+  }, [isConnected, onNewGroupMessage, transformSocketMessage, activeChat]);
 
   // Listen for message_deleted_for_me event
   useEffect(() => {
@@ -715,28 +455,6 @@ export const ChatProvider = ({ children }) => {
       // Cleanup handled by socket service
     };
   }, [isConnected, onMessageDeletedForMe]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const handleGroupMessageDeletedForMe = (data) => {
-      console.log('Group message deleted for me:', data);
-
-      const { messageId, groupId } = data || {};
-      if (!messageId || !groupId) return;
-
-      setMessages(prev => ({
-        ...prev,
-        [groupId]: (prev[groupId] || []).filter(
-          m => m.id !== messageId && m._id !== messageId
-        )
-      }));
-    };
-
-    onGroupMessageDeletedForMe(handleGroupMessageDeletedForMe);
-
-    return () => {};
-  }, [isConnected, onGroupMessageDeletedForMe]);
 
   // Listen for message_deleted_for_everyone event
   useEffect(() => {
@@ -764,47 +482,32 @@ export const ChatProvider = ({ children }) => {
 
     onMessageDeletedForEveryone(handleMessageDeletedForEveryone);
 
-    return () => {
-      // Cleanup handled by socket service
-    };
-  }, [isConnected, onMessageDeletedForEveryone]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const handleGroupMessageDeletedForEveryone = (data) => {
-      console.log('Group message deleted for everyone:', data);
-
-      const { messageId, groupId } = data || {};
-      if (!messageId || !groupId) return;
-
-      setMessages(prev => ({
-        ...prev,
-        [groupId]: (prev[groupId] || []).filter(
-          m => m.id !== messageId && m._id !== messageId
-        )
-      }));
-    };
-
-    onGroupMessageDeletedForEveryone(handleGroupMessageDeletedForEveryone);
-
-    return () => {};
-  }, [isConnected, onGroupMessageDeletedForEveryone]);
-
   // Listen for marked_as_read event (when receiver reads our messages)
   useEffect(() => {
     if (!isConnected) return;
 
     const handleMarkedAsRead = (data) => {
       console.log('Messages marked as read by other user:', data);
-
-      const otherUserId =
-        getReadEventOtherUserId(data) ||
-        (activeChat?.type === 'private' ? activeChat.participants?.[0] || activeChat.id : null);
-
-      if (!otherUserId) return;
-
-      markOutgoingMessagesAsRead(otherUserId, activeChat?.id);
+      
+      const { otherUserId } = data;
+      
+      // Mark only SENT messages (by current user) to this user as read
+      setMessages(prev => {
+        const updatedMessages = { ...prev };
+        
+        // Update messages for this chat - only mark messages sent by 'current' user
+        if (updatedMessages[otherUserId]) {
+          updatedMessages[otherUserId] = updatedMessages[otherUserId].map(msg => {
+            // Only mark as read if this message was sent by current user (sender: 'current')
+            if (msg.sender === 'current' && !msg.isRead) {
+              return { ...msg, isRead: true };
+            }
+            return msg;
+          });
+        }
+        
+        return updatedMessages;
+      });
     };
 
     onMarkedAsRead(handleMarkedAsRead);
@@ -812,22 +515,17 @@ export const ChatProvider = ({ children }) => {
     return () => {
       // Cleanup handled by socket service
     };
-  }, [isConnected, onMarkedAsRead, getReadEventOtherUserId, activeChat, markOutgoingMessagesAsRead]);
+  }, [isConnected, onMarkedAsRead]);
 
-  // Listen for messages_read event (receiver-side confirmation)
+  // Listen for messages_read event (when we read someone's messages)
   useEffect(() => {
     if (!isConnected) return;
 
     const handleMessagesRead = (data) => {
       console.log('Messages read event:', data);
-
-      const otherUserId =
-        getReadEventOtherUserId(data) ||
-        (activeChat?.type === 'private' ? activeChat.participants?.[0] || activeChat.id : null);
-
-      if (!otherUserId) return;
-
-      markOutgoingMessagesAsRead(otherUserId, activeChat?.id);
+      
+      const { userId, otherUserId } = data;
+      // This is confirmation that our messages were marked as read
     };
 
     onMessagesRead(handleMessagesRead);
@@ -835,7 +533,7 @@ export const ChatProvider = ({ children }) => {
     return () => {
       // Cleanup handled by socket service
     };
-  }, [isConnected, onMessagesRead, getReadEventOtherUserId, activeChat, markOutgoingMessagesAsRead]);
+  }, [isConnected, onMessagesRead]);
 
   // Fetch messages when active chat changes
   useEffect(() => {
@@ -852,39 +550,49 @@ export const ChatProvider = ({ children }) => {
 
     console.log('ACTIVE CHAT SELECTED:', activeChat.id, 'Type:', activeChat.type);
 
-    let otherUserId = null;
-
     // For private chats: join then immediately fetch messages
     if (activeChat.type === 'private') {
-      otherUserId = activeChat.participants[0];
+      const otherUserId = activeChat.participants[0];
       console.log('CALLING joinPrivateChat and getMessages for:', otherUserId);
       joinPrivateChat(otherUserId);
       getMessages(otherUserId);
     } else if (activeChat.type === 'group') {
-      console.log('CALLING join_group and get_messages for group:', activeChat.id);
+      console.log('CALLING joinChat and getGroupMessages for group:', activeChat.id);
       joinChat(activeChat.id, activeChat.type);
       getGroupMessages(activeChat.id);
     }
 
-    if (activeChat.type === 'private' && otherUserId) {
-      markAsRead(activeChat.id);
-    } else if (activeChat.type === 'group') {
-      markAsRead(activeChat.id);
-    } else {
-      setChats(prev => prev.map(chat =>
-        chat.id === activeChat.id ? { ...chat, unread: 0 } : chat
-      ));
+    // Emit mark_as_read to tell other user we've read their messages
+    if (markAsRead) {
+      console.log('Emitting mark_as_read for:', otherUserId);
+      markAsRead(otherUserId);
     }
+
+    // Update local state: clear unread count and mark RECEIVED messages as read
+    setChats(prev => prev.map(chat => 
+      chat.id === activeChat.id ? { ...chat, unread: 0 } : chat
+    ));
+    
+    // Only mark RECEIVED messages as read (not sent messages)
+    setMessages(prev => {
+      const chatMessages = prev[activeChat.id] || [];
+      return {
+        ...prev,
+        [activeChat.id]: chatMessages.map(msg => {
+          // Only mark received messages as read (sender is NOT 'current')
+          if (msg.sender !== 'current' && msg.sender !== 'currentUser') {
+            return { ...msg, isRead: true };
+          }
+          return msg;
+        })
+      };
+    });
 
     return () => {
       console.log('LEAVING CHAT:', activeChat.id);
-      if (activeChat.type === 'group') {
-        leaveGroup(activeChat.id);
-      } else {
-        leaveChat(activeChat.id);
-      }
+      leaveChat(activeChat.id);
     };
-  }, [activeChat, isConnected, joinPrivateChat, joinChat, leaveChat, leaveGroup, getMessages, getGroupMessages]);
+  }, [activeChat, isConnected, joinPrivateChat, joinChat, leaveChat, getMessages, getGroupMessages]);
 
   // Search users and groups
   const searchUsersAndGroups = useCallback(async (query) => {
@@ -932,28 +640,26 @@ export const ChatProvider = ({ children }) => {
     let imageUrl = '';
     
     // If file is image, upload it first
-    if (file) {
+    if (file && file.type.startsWith('image/')) {
       try {
         const formData = new FormData();
         formData.append('image', file);
         
-        const response = await fetch('https://gh802w59-3000.inc1.devtunnels.ms/chatmedia/upload', {
+        const response = await fetch('http://192.168.1.47:3000/chatmedia/upload', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`
           },
           body: formData
         });
-
-        console.log('File upload response:', response);
         
         const result = await response.json();
         if (result.statusCode === 200 && result.data?.imageUrl) {
           imageUrl = result.data.imageUrl;
-          console.log('File uploaded successfully:', imageUrl);
+          console.log('Image uploaded successfully:', imageUrl);
         }
       } catch (error) {
-        console.error('File upload failed:', error);
+        console.error('Image upload failed:', error);
       }
     }
 
@@ -971,7 +677,7 @@ export const ChatProvider = ({ children }) => {
       text: text,
       timestamp: new Date().toISOString(),
       sender: 'current',
-      type: file ? getMessageTypeFromFile(file) : 'text',
+      type: file ? (file.type.startsWith('image/') ? 'image' : 'file') : 'text',
       file: file ? {
         name: file.name,
         size: file.size,
@@ -992,7 +698,7 @@ export const ChatProvider = ({ children }) => {
       const receiverId = chat.participants[0];
       sendSocketMessage(receiverId, text, imageUrl);
     } else if (chat.type === 'group') {
-      sendGroupMessage(chatId, text, imageUrl);
+      sendGroupMessage(chatId, text, imageUrl ? 'image' : (file ? 'file' : 'text'));
     }
 
     // Update last message in chat list
@@ -1004,73 +710,48 @@ export const ChatProvider = ({ children }) => {
             text: file ? `Sent ${file.name}` : text,
             timestamp: new Date().toISOString(),
             sender: 'current',
-            isRead: false,
             file: !!file
           }
         };
       }
       return c;
     }));
-  }, [authToken, chats, getMessageTypeFromFile, sendGroupMessage, sendSocketMessage]);
+  }, [chats, sendSocketMessage, sendGroupMessage, authToken]);
 
   const markAsRead = useCallback((chatId) => {
-    const chat = chatsRef.current.find(c => c.id === chatId);
+    const chat = chats.find(c => c.id === chatId);
     if (!chat) return;
 
+    // Get the other user ID for private chats
     const otherUserId = chat.type === 'private' ? chat.participants[0] : chatId;
-    const now = Date.now();
-    const lastEmitAt = lastReadEmitRef.current[otherUserId] || 0;
-    const chatMessages = messagesRef.current[otherUserId] || messagesRef.current[chatId] || [];
-    const hasUnreadIncomingMessages = chatMessages.some(msg => {
-      const isReceivedMessage =
-        msg.sender !== 'current' && msg.sender !== 'currentUser' && msg.sender !== currentUserId;
 
-      return isReceivedMessage && !msg.isRead;
-    });
-
-    if (chat.type === 'private' && (hasUnreadIncomingMessages || now - lastEmitAt > 1500)) {
-      lastReadEmitRef.current[otherUserId] = now;
-      socketMarkAsRead(otherUserId);
-    } else if (chat.type === 'group' && (hasUnreadIncomingMessages || now - lastEmitAt > 1500)) {
-      lastReadEmitRef.current[otherUserId] = now;
-      markGroupMessagesAsRead(chatId);
+    // Emit mark_as_read event via socket
+    if (markAsReadSocket) {
+      markAsReadSocket(otherUserId);
     }
 
-    setChats(prev => prev.map(chatItem => {
-      if (chatItem.id !== chatId || chatItem.unread === 0) {
-        return chatItem;
-      }
-
-      return { ...chatItem, unread: 0 };
-    }));
-
+    // Only update local unread count - DO NOT mark sent messages as read
+    // Sent messages will only be marked as read when we receive 'marked_as_read' event
+    setChats(prev => prev.map(chat => 
+      chat.id === chatId ? { ...chat, unread: 0 } : chat
+    ));
+    
+    // Only mark RECEIVED messages (from other user) as read locally
+    // Sent messages remain unread until receiver confirms
     setMessages(prev => {
-      const targetKey = prev[otherUserId] ? otherUserId : chatId;
-      const existingMessages = prev[targetKey] || [];
-      let hasLocalChanges = false;
-
-      const updatedMessages = existingMessages.map(msg => {
-        const isReceivedMessage =
-          msg.sender !== 'current' && msg.sender !== 'currentUser' && msg.sender !== currentUserId;
-
-        if (isReceivedMessage && !msg.isRead) {
-          hasLocalChanges = true;
-          return { ...msg, isRead: true };
-        }
-
-        return msg;
-      });
-
-      if (!hasLocalChanges) {
-        return prev;
-      }
-
+      const chatMessages = prev[chatId] || [];
       return {
         ...prev,
-        [targetKey]: updatedMessages
+        [chatId]: chatMessages.map(msg => {
+          // Only mark received messages as read (sender is NOT 'current')
+          if (msg.sender !== 'current' && msg.sender !== 'currentUser') {
+            return { ...msg, isRead: true };
+          }
+          return msg;
+        })
       };
     });
-  }, [socketMarkAsRead, markGroupMessagesAsRead, currentUserId]);
+  }, [chats, markAsReadSocket]);
 
   const createChat = useCallback((type, name, participantIds, avatar = '') => {
     const newChat = {
@@ -1094,28 +775,23 @@ export const ChatProvider = ({ children }) => {
     const chat = chats.find(c => c.id === chatId);
     if (!chat) return;
 
-    if (chat.type === 'group') {
-      if (deleteForAll) {
-        deleteGroupForEveryone(chatId, messageId);
-      } else {
-        deleteGroupForMe(chatId, messageId);
-      }
-    } else {
-      const otherUserId = chat.participants[0];
+    // Get the correct user ID for private chats
+    const otherUserId = chat.type === 'private' ? chat.participants[0] : chatId;
 
-      if (deleteForAll) {
-        deleteForEveryone(otherUserId, messageId);
-      } else {
-        deleteForMe(otherUserId, messageId);
-      }
+    if (deleteForAll) {
+      // Emit delete for everyone
+      deleteForEveryone(otherUserId, messageId);
+    } else {
+      // Emit delete for me
+      deleteForMe(otherUserId, messageId);
     }
 
     // Optimistically remove from UI
     setMessages(prev => ({
       ...prev,
-      [chatId]: (prev[chatId] || []).filter(m => m.id !== messageId && m._id !== messageId)
+      [chatId]: prev[chatId]?.filter(m => m.id !== messageId) || []
     }));
-  }, [chats, deleteForMe, deleteForEveryone, deleteGroupForMe, deleteGroupForEveryone]);
+  }, [chats, deleteForMe, deleteForEveryone]);
 
   const value = {
     chats,

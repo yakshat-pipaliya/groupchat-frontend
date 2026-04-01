@@ -1,50 +1,71 @@
-/* Modern Chat App Design System */
+/* WhatsApp Chat App Design System */
 :root {
+  /* WhatsApp Colors */
+  --whatsapp-teal: #008069;
+  --whatsapp-teal-dark: #005c4b;
+  --whatsapp-teal-light: #00a884;
+  --whatsapp-green: #25d366;
+  --whatsapp-bg: #efeae2;
+  --whatsapp-chat-bg: #e5ddd5;
+  --whatsapp-panel-bg: #f0f2f5;
+  --whatsapp-header-bg: #f0f2f5;
+  --whatsapp-bubble-sent: #d9fdd3;
+  --whatsapp-bubble-received: #ffffff;
+  --whatsapp-text: #111b21;
+  --whatsapp-text-secondary: #667781;
+  --whatsapp-text-meta: #8696a0;
+  --whatsapp-border: #d1d7db;
+  --whatsapp-input-bg: #ffffff;
+  --whatsapp-icon: #54656f;
+  --whatsapp-tick: #53bdeb;
+  --whatsapp-encryption-bg: #ffeecd;
+  --whatsapp-encryption-text: #54656f;
+  
   /* Primary Colors */
-  --primary-color: #6366f1;
-  --primary-hover: #4f46e5;
-  --secondary-color: #8b5cf6;
-  --accent-color: #06b6d4;
+  --primary-color: #00a884;
+  --primary-hover: #008069;
+  --secondary-color: #25d366;
+  --accent-color: #53bdeb;
   
   /* Status Colors */
-  --online-color: #22c55e;
-  --offline-color: #6b7280;
+  --online-color: #25d366;
+  --offline-color: #8696a0;
   --away-color: #f59e0b;
   --error-color: #ef4444;
   --warning-color: #f59e0b;
-  --success-color: #22c55e;
+  --success-color: #25d366;
   
-  /* Background Colors - Light Mode */
-  --bg-dark: #f3f4f6;
+  /* Background Colors - Light Mode (WhatsApp Style) */
+  --bg-dark: #dadbd3;
   --bg-card: #ffffff;
-  --bg-hover: #f9fafb;
-  --bg-input: #f3f4f6;
+  --bg-hover: #f5f6f6;
+  --bg-input: #f0f2f5;
   
-  /* Text Colors - Light Mode */
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
+  /* Text Colors */
+  --text-primary: #111b21;
+  --text-secondary: #667781;
+  --text-muted: #8696a0;
   --text-inverse: #ffffff;
   
   /* Border Colors */
-  --border-color: #e5e7eb;
-  --border-focus: #6366f1;
+  --border-color: #d1d7db;
+  --border-focus: #00a884;
   
   /* Gradients */
-  --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --gradient-2: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+  --gradient-1: linear-gradient(135deg, #00a884 0%, #008069 100%);
+  --gradient-2: linear-gradient(135deg, #25d366 0%, #00a884 100%);
   
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
   
   /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
   
   /* Typography */
@@ -67,9 +88,9 @@
   --space-10: 40px;
   
   /* Layout */
-  --sidebar-width: 280px;
-  --chat-list-width: 360px;
-  --header-height: 64px;
+  --sidebar-width: 60px;
+  --chat-list-width: 400px;
+  --header-height: 60px;
   
   font-family: var(--font-sans);
   font-size: 14px;
