@@ -633,11 +633,6 @@
     height: 18px;
   }
 
-  .chat-header-actions .btn-icon:nth-child(1),
-  .chat-header-actions .btn-icon:nth-child(2) {
-    display: none;
-  }
-
   .chat-header-actions .btn-icon {
     width: 34px;
     height: 34px;
