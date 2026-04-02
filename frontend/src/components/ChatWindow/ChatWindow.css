@@ -7,6 +7,7 @@
   background: #efeae2;
   overflow: hidden;
   position: relative;
+  isolation: isolate;
 }
 
 /* WhatsApp Wallpaper Pattern */
@@ -142,6 +143,8 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  position: relative;
+  z-index: 4;
 }
 
 .chat-header-info {
@@ -590,6 +593,24 @@
     padding: 8px 12px;
     height: 56px;
     gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  .chat-header-info {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .chat-header-main {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .chat-header-details {
+    min-width: 0;
   }
 
   .chat-header-avatar {
@@ -614,6 +635,11 @@
   .chat-header-actions .btn-icon:nth-child(1),
   .chat-header-actions .btn-icon:nth-child(2) {
     display: none;
+  }
+
+  .chat-header-actions .btn-icon {
+    width: 34px;
+    height: 34px;
   }
 
   .messages-container {
