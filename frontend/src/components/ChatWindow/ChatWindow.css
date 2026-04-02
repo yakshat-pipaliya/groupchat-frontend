@@ -583,6 +583,7 @@
 @media (max-width: 768px) {
   .chat-window {
     overflow-x: hidden;
+    min-height: 100dvh;
   }
 
   .mobile-back-btn {
@@ -590,8 +591,8 @@
   }
 
   .chat-header {
-    padding: 8px 12px;
-    height: 56px;
+    padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+    min-height: calc(56px + env(safe-area-inset-top));
     gap: 8px;
     position: sticky;
     top: 0;
