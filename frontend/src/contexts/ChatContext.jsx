@@ -86,6 +86,61 @@ export const ChatProvider = ({ children }) => {
 
   // Wrapper to set active chat with localStorage persistence
   const setActiveChat = useCallback((chat) => {
+    if (chat) {
+      setChats(prevChats => {
+        const existingChat = prevChats.find(existing => existing.id === chat.id);
+        if (existingChat) {
+          return prevChats;
+        }
+
+        const normalizedChat = {
+          id: chat.id,
+          type: chat.type,
+          name: chat.name,
+          participants: chat.participants || [],
+          avatar: chat.avatar || chat.userData?.profileImage || null,
+          lastMessage: chat.lastMessage || null,
+          unread: chat.unread || 0,
+          memberCount: chat.memberCount,
+          online: chat.online
+        };
+
+        return [normalizedChat, ...prevChats];
+      });
+
+      if (chat.type === 'private') {
+        const sourceUser = chat.userData || {
+          _id: chat.participants?.[0],
+          username: chat.name,
+          profileImage: chat.avatar,
+          isOnline: chat.online
+        };
+
+        if (sourceUser?._id) {
+          setUsers(prevUsers => {
+            const exists = prevUsers.some(existingUser => existingUser.id === sourceUser._id);
+            if (exists) {
+              return prevUsers;
+            }
+
+            return [
+              {
+                id: sourceUser._id,
+                name: sourceUser.username || sourceUser.firstname || sourceUser.email || chat.name,
+                avatar: sourceUser.profileImage || chat.avatar || null,
+                status: sourceUser.isOnline ? 'online' : 'offline',
+                lastSeen: null,
+                email: sourceUser.email,
+                firstname: sourceUser.firstname,
+                lastname: sourceUser.lastname
+              },
+              ...prevUsers
+            ];
+          });
+        }
+      }
+    }
+
     setActiveChatState(chat);
     if (chat) {
       localStorage.setItem('activeChat', JSON.stringify(chat));
@@ -381,10 +436,21 @@ export const ChatProvider = ({ children }) => {
 
       const transformedMessages = data.messages.map(transformSocketMessage);
 
-      setMessages(prev => ({
-        ...prev,
-        [data.otherUserId]: transformedMessages
-      }));
+      setMessages(prev => {
+        const existingMessages = prev[data.otherUserId] || [];
+        const pendingMessages = existingMessages.filter(message =>
+          message.pending &&
+          !transformedMessages.some(serverMessage =>
+            serverMessage.text === message.text &&
+            !!serverMessage.imageUrl === !!message.imageUrl
+          )
+        );
+
+        return {
+          ...prev,
+          [data.otherUserId]: [...transformedMessages, ...pendingMessages]
+        };
+      });
     };
 
     onAllMessages(handleAllMessages);
@@ -537,10 +603,21 @@ export const ChatProvider = ({ children }) => {
 
       const transformedMessages = data.messages.map(transformSocketMessage);
 
-      setMessages(prev => ({
-        ...prev,
-        [data.groupId]: transformedMessages
-      }));
+      setMessages(prev => {
+        const existingMessages = prev[data.groupId] || [];
+        const pendingMessages = existingMessages.filter(message =>
+          message.pending &&
+          !transformedMessages.some(serverMessage =>
+            serverMessage.text === message.text &&
+            !!serverMessage.imageUrl === !!message.imageUrl
+          )
+        );
+
+        return {
+          ...prev,
+          [data.groupId]: [...transformedMessages, ...pendingMessages]
+        };
+      });
     };
 
     onGroupMessages(handleGroupMessages);

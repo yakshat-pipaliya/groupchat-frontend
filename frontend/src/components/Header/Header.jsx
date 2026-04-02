@@ -24,9 +24,9 @@ const Header = ({ searchQuery, onSearchChange, loading, onCreateClick, onProfile
           <span>WhatsApp</span>
         </div>
         <div className="header-actions">
-          <button className="header-btn new-chat-btn" onClick={onCreateClick} title="New Chat">
+          {/* <button className="header-btn new-chat-btn" onClick={onCreateClick} title="New Chat">
             <Plus size={20} />
-          </button>
+          </button> */}
           <button className="header-btn" onClick={onProfileClick} title="Profile">
             <User size={20} />
           </button>

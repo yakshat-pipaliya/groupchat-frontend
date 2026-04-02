@@ -101,7 +101,7 @@
 }
 
 .header-search-input:focus {
-  background: #ffffff;
+  /* background: #ffffff; */
 }
 
 .header-search-input::placeholder {
