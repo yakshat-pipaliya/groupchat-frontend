@@ -194,14 +194,6 @@ const ChatWindow = ({ onBackToChatList }) => {
         </div>
       </div>
 
-      {/* Encryption Banner */}
-      <div className="encryption-banner">
-        <Lock size={14} />
-        <p>
-          Messages are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. <a href="#">Click to learn more.</a>
-        </p>
-      </div>
-
       {/* Messages Container */}
       <div className="messages-container">
         {messages.length === 0 ? (

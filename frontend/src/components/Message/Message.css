@@ -2,6 +2,7 @@
 .message {
   display: flex;
   width: 100%;
+  max-width: 100%;
   margin-bottom: 2px;
   align-items: flex-end;
   position: relative;
@@ -71,6 +72,8 @@
   line-height: 19px;
   position: relative;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
   box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
 }
 
@@ -245,7 +248,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .message-content {
-    max-width: 75%;
+    max-width: 82%;
   }
   
   .message-bubble {
@@ -268,5 +271,9 @@
   .image-preview,
   .video-preview {
     max-width: 200px;
+  }
+
+  .message-actions-container {
+    display: none;
   }
 }
