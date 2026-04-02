@@ -16,17 +16,6 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState('home');
 
-  useEffect(() => {
-    if (!user) return;
-
-    const isAdmin = user.role === 'admin';
-    const isAdminPage = window.location.pathname.endsWith('/admin.html');
-
-    if (isAdmin && !isAdminPage) {
-      window.location.replace('/admin.html');
-    }
-  }, [user]);
-
   // Initialize current view from URL on mount
   useEffect(() => {
     const path = window.location.pathname;
@@ -98,13 +87,9 @@ function AppContent() {
     return <Login />;
   }
 
-  if (user.role === 'admin') {
-    return null;
-  }
-
   // Simple routing for authenticated users
   const renderView = () => {
-    switch(currentView) {
+    switch (currentView) {
       case 'profile':
         return <Profile onBackToHome={() => updateView('home')} />;
       default:

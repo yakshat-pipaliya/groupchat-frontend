@@ -20,20 +20,7 @@ const CallOverlay = () => {
     endGroupCall
   } = useCall();
 
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream]);
-
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
+  // Removed video refs in favor of inline assignment
 
   if (!incomingCall && !activeCall) return null;
 
@@ -84,7 +71,7 @@ const CallOverlay = () => {
           <>
             {isVideo && (
               <video
-                ref={remoteVideoRef}
+                ref={el => { if(el) el.srcObject = remoteStream; }}
                 autoPlay
                 playsInline
                 className={`remote-video ${!remoteStream ? 'hidden' : ''}`}
@@ -97,7 +84,7 @@ const CallOverlay = () => {
             )}
             {(localStream && isVideo) && (
               <video
-                ref={localVideoRef}
+                ref={el => { if(el) el.srcObject = localStream; }}
                 autoPlay
                 muted
                 playsInline
@@ -106,14 +93,14 @@ const CallOverlay = () => {
             )}
             {/* Play audio in background even if it's voice call */}
             {(!isVideo && remoteStream) && (
-              <audio ref={remoteVideoRef} autoPlay playsInline />
+              <audio ref={el => { if(el) el.srcObject = remoteStream; }} autoPlay playsInline />
             )}
           </>
         ) : (
           <>
             {(localStream && isVideo) && (
               <div className="group-video-wrapper">
-                <video ref={localVideoRef} autoPlay muted playsInline />
+                <video ref={el => { if(el) el.srcObject = localStream; }} autoPlay muted playsInline />
                 <span>You</span>
               </div>
             )}

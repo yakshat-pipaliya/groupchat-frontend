@@ -32,8 +32,46 @@ export const CallProvider = ({ children }) => {
     activeCallRef.current = callInfo;
   };
 
+  const createDummyStream = (isVideo) => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = ctx.createMediaStreamDestination();
+      const osc = ctx.createOscillator();
+      osc.connect(dest);
+      const audioTrack = dest.stream.getAudioTracks()[0];
+
+      if (!isVideo) {
+        return new MediaStream([audioTrack]);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 480;
+      const canvasCtx = canvas.getContext('2d');
+      canvasCtx.fillStyle = '#111';
+      canvasCtx.fillRect(0, 0, 640, 480);
+      canvasCtx.fillStyle = '#fff';
+      canvasCtx.font = '30px Arial';
+      canvasCtx.textAlign = 'center';
+      canvasCtx.fillText('No Camera / HTTP Blocked', 320, 240);
+      
+      const videoStream = canvas.captureStream(10);
+      const videoTrack = videoStream.getVideoTracks()[0];
+
+      return new MediaStream([audioTrack, videoTrack]);
+    } catch (e) {
+      console.warn("Dummy stream failed", e);
+      return new MediaStream();
+    }
+  };
+
   const getMedia = async (isVideo) => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('mediaDevices API is not supported in this environment');
+        toast.error('Media devices blocked. Generating a dummy feed.');
+        return createDummyStream(isVideo);
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
       setLocalStream(stream);
       localStreamRef.current = stream;
@@ -41,7 +79,10 @@ export const CallProvider = ({ children }) => {
     } catch (e) {
       console.error('Media error', e);
       toast.error('Could not access microphone/camera');
-      return null;
+      const dummyStream = createDummyStream(isVideo);
+      setLocalStream(dummyStream);
+      localStreamRef.current = dummyStream;
+      return dummyStream;
     }
   };
 
@@ -160,19 +201,48 @@ export const CallProvider = ({ children }) => {
       socket.emit('webrtc_answer', { roomId: d.roomId, answer, targetUserId: d.senderId });
     });
 
-    socket.on('webrtc_answer', (d) => {
-      peerConnRef.current?.setRemoteDescription(new RTCSessionDescription(d.answer));
+    socket.on('webrtc_answer', async (d) => {
+      try {
+        if (peerConnRef.current) {
+          await peerConnRef.current.setRemoteDescription(new RTCSessionDescription(d.answer));
+          if (peerConnRef.current.candidateQueue) {
+            peerConnRef.current.candidateQueue.forEach(c => peerConnRef.current.addIceCandidate(new RTCIceCandidate(c)).catch(console.warn));
+            peerConnRef.current.candidateQueue = [];
+          }
+        }
+      } catch (err) {
+        console.error('Error setting remote answer:', err);
+      }
     });
 
-    socket.on('webrtc_ice_candidate', (d) => {
-      peerConnRef.current?.addIceCandidate(new RTCIceCandidate(d.candidate));
+    socket.on('webrtc_ice_candidate', async (d) => {
+      const pc = peerConnRef.current;
+      if (pc) {
+        try {
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(d.candidate));
+          } else {
+            if (!pc.candidateQueue) pc.candidateQueue = [];
+            pc.candidateQueue.push(d.candidate);
+          }
+        } catch (err) {
+          console.warn('ICE Candidate skipped or queued', err);
+        }
+      }
     });
 
     // ----- GROUP CALL EVENTS -----
-    socket.on('group_call_live', async (d) => {
+    socket.on('group_call_ringing', (d) => {
       updateActiveCall({ ...d, isGroup: true, isInitiator: true });
+      setCallStatus('ringing');
+    });
+
+    socket.on('incoming_group_call', (d) => {
+      setIncomingCall({ ...d, isGroup: true });
+    });
+
+    socket.on('group_call_started', async (d) => {
       setCallStatus('active');
-      await getMedia(d.callType === 'video');
     });
 
     socket.on('active_group_call', (d) => {
@@ -182,7 +252,7 @@ export const CallProvider = ({ children }) => {
     socket.on('group_call_joined', (d) => {
       setIncomingCall(null);
       updateActiveCall({ ...d, isGroup: true });
-      setCallStatus('connecting');
+      setCallStatus('active');
       if (d.participants) {
         d.participants.forEach(pid => setupGroupPeer(d.roomId, pid, false, socket));
       }
@@ -190,9 +260,7 @@ export const CallProvider = ({ children }) => {
 
     socket.on('participant_joined_group_call', (d) => {
       setActiveCall(prev => prev ? { ...prev, participants: d.participants } : prev);
-      if (activeCallRef.current?.isInitiator && localStreamRef.current) {
-        setupGroupPeer(d.roomId, d.userId, true, socket);
-      }
+      // New member will initiate WebRTC offer, wait for group_call_webrtc_offer
     });
 
     socket.on('participant_left_group_call', (d) => {
@@ -215,22 +283,52 @@ export const CallProvider = ({ children }) => {
     });
 
     socket.on('group_call_webrtc_offer', async (d) => {
-      if (!groupConnsRef.current[d.senderId]) await setupGroupPeer(d.roomId, d.senderId, true, socket);
-      await groupConnsRef.current[d.senderId].setRemoteDescription(new RTCSessionDescription(d.offer));
-      const answer = await groupConnsRef.current[d.senderId].createAnswer();
-      await groupConnsRef.current[d.senderId].setLocalDescription(answer);
-      socket.emit('group_call_webrtc_answer', { roomId: d.roomId, answer, targetUserId: d.senderId });
-    });
+      try {
+        if (!groupConnsRef.current[d.senderId]) await setupGroupPeer(d.roomId, d.senderId, true, socket);
+        const pc = groupConnsRef.current[d.senderId];
+        await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
+        
+        if (pc.candidateQueue) {
+          pc.candidateQueue.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)).catch(console.warn));
+          pc.candidateQueue = [];
+        }
 
-    socket.on('group_call_webrtc_answer', (d) => {
-      if (groupConnsRef.current[d.senderId]) {
-        groupConnsRef.current[d.senderId].setRemoteDescription(new RTCSessionDescription(d.answer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('group_call_webrtc_answer', { roomId: d.roomId, answer, targetUserId: d.senderId });
+      } catch (err) {
+        console.error('Error handling webrtc offer:', err);
       }
     });
 
-    socket.on('group_call_webrtc_ice_candidate', (d) => {
-      if (groupConnsRef.current[d.senderId]) {
-        groupConnsRef.current[d.senderId].addIceCandidate(new RTCIceCandidate(d.candidate));
+    socket.on('group_call_webrtc_answer', async (d) => {
+      try {
+        const pc = groupConnsRef.current[d.senderId];
+        if (pc) {
+          await pc.setRemoteDescription(new RTCSessionDescription(d.answer));
+          if (pc.candidateQueue) {
+            pc.candidateQueue.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)).catch(console.warn));
+            pc.candidateQueue = [];
+          }
+        }
+      } catch (err) {
+        console.error('Error handling group webrtc answer:', err);
+      }
+    });
+
+    socket.on('group_call_webrtc_ice_candidate', async (d) => {
+      const pc = groupConnsRef.current[d.senderId];
+      if (pc) {
+        try {
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(d.candidate));
+          } else {
+            if (!pc.candidateQueue) pc.candidateQueue = [];
+            pc.candidateQueue.push(d.candidate);
+          }
+        } catch (err) {
+          console.warn('Group ICE Candidate queued natively', err);
+        }
       }
     });
 
@@ -242,12 +340,23 @@ export const CallProvider = ({ children }) => {
 
   // Actions
   const startCall = async (receiverId, callType) => {
-    if (!socketRef.current) return;
-    const stream = await getMedia(callType === 'video');
-    if (!stream) return;
-    updateActiveCall({ targetId: receiverId, callType, isGroup: false });
-    setCallStatus('ringing');
-    socketRef.current.emit('initiate_call', { receiverId, callType });
+    if (!socketRef.current || !socketRef.current.connected) {
+      toast.error("Call server disconnected. Please try again.");
+      return;
+    }
+    try {
+      const stream = await getMedia(callType === 'video');
+      if (!stream) {
+        toast.error("Stream generation failed entirely.");
+        return;
+      }
+      updateActiveCall({ targetId: receiverId, callType, isGroup: false });
+      setCallStatus('ringing');
+      socketRef.current.emit('initiate_call', { receiverId, callType });
+    } catch (err) {
+      console.error("Failed to start call", err);
+      toast.error("Error initiating call");
+    }
   };
 
   const acceptCall = async () => {
@@ -272,20 +381,36 @@ export const CallProvider = ({ children }) => {
   };
 
   // Group Call Actions
-  const startGroupCall = (groupId, callType) => {
-    if (!socketRef.current) return;
-    // For group call, it becomes live immediately from backend
-    socketRef.current.emit('initiate_group_call', { groupId, callType });
+  const startGroupCall = async (groupId, callType) => {
+    if (!socketRef.current || !socketRef.current.connected) {
+      toast.error("Call server disconnected. Please try again.");
+      return;
+    }
+    toast.info("Starting group call...");
+    try {
+      const stream = await getMedia(callType === 'video');
+      if (!stream) {
+        toast.error("Stream generation failed entirely.");
+        return;
+      }
+      socketRef.current.emit('initiate_group_call', { groupId, callType });
+    } catch (err) {
+      console.error("Failed to start group call", err);
+      toast.error("Error initiating group call");
+    }
   };
 
   const acceptGroupCall = async () => {
     if (!socketRef.current || !incomingCall) return;
     const stream = await getMedia(incomingCall.callType === 'video');
     if (!stream) return;
-    socketRef.current.emit('join_group_call', { roomId: incomingCall.roomId });
+    socketRef.current.emit('accept_group_call', { roomId: incomingCall.roomId });
+    // Will transition once group_call_joined is received
   };
 
   const rejectGroupCall = () => {
+    if (!socketRef.current || !incomingCall) return;
+    socketRef.current.emit('reject_group_call', { roomId: incomingCall.roomId });
     setIncomingCall(null);
   };
 

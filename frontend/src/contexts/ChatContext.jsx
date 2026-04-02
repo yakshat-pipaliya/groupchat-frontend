@@ -42,6 +42,7 @@ export const ChatProvider = ({ children }) => {
   const chatsRef = useRef([]);
   const messagesRef = useRef({});
   const lastReadEmitRef = useRef({});
+  const joinedRoomRef = useRef({ id: null, type: null, privateUserId: null });
   const currentUserId = (() => {
     try {
       return JSON.parse(localStorage.getItem('userData') || '{}')?._id || null;
@@ -261,13 +262,13 @@ export const ChatProvider = ({ children }) => {
   const transformSocketMessage = useCallback((msg) => {
     const messageType = msg.imageUrl ? getMessageTypeFromUrl(msg.imageUrl) : 'text';
     const senderId = msg.senderId?._id || msg.senderId;
-    
+
     // Ensure imageUrl has proper protocol
     let fullImageUrl = msg.imageUrl || null;
     if (fullImageUrl && !fullImageUrl.startsWith('http')) {
       fullImageUrl = `http://${fullImageUrl}`;
     }
-    
+
     return {
       id: msg._id || `${senderId || 'system'}-${msg.timestamp || msg.createdAt || Date.now()}-${msg.message || msg.imageUrl || 'message'}`,
       text: msg.message || '',
@@ -288,7 +289,7 @@ export const ChatProvider = ({ children }) => {
   // Transform API data to chat format
   const transformChatData = useCallback((apiData) => {
     const transformedChats = [];
-    
+
     // Transform one-to-one chats
     if (apiData.oneToOneChats) {
       apiData.oneToOneChats.forEach(user => {
@@ -304,7 +305,7 @@ export const ChatProvider = ({ children }) => {
         });
       });
     }
-    
+
     // Transform group chats
     if (apiData.groups) {
       apiData.groups.forEach(group => {
@@ -325,14 +326,14 @@ export const ChatProvider = ({ children }) => {
         });
       });
     }
-    
+
     return transformedChats;
   }, []);
 
   // Transform users data
   const transformUsersData = useCallback((apiData) => {
     const transformedUsers = [];
-    
+
     // Add one-to-one chat users
     if (apiData.oneToOneChats) {
       apiData.oneToOneChats.forEach(user => {
@@ -348,7 +349,7 @@ export const ChatProvider = ({ children }) => {
         });
       });
     }
-    
+
     // Add group members
     if (apiData.groups) {
       apiData.groups.forEach(group => {
@@ -368,7 +369,7 @@ export const ChatProvider = ({ children }) => {
         });
       });
     }
-    
+
     return transformedUsers;
   }, []);
 
@@ -376,15 +377,15 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     const loadChatMembers = async () => {
       if (!authToken || !user) return;
-      
+
       try {
         setLoading(true);
         const response = await getChatMembers(authToken);
-        
+
         if (response.statusCode === 200 && response.data) {
           const transformedChats = transformChatData(response.data);
           const transformedUsers = transformUsersData(response.data);
-          
+
           setChats(transformedChats);
           setUsers(transformedUsers);
           setActiveChatState(prevActiveChat => {
@@ -407,10 +408,10 @@ export const ChatProvider = ({ children }) => {
   // Listen for joined_chat event (room confirmation from backend)
   useEffect(() => {
     console.log('Setting up joined_chat listener, isConnected:', isConnected);
-    
+
     const handleJoinedChat = (data) => {
       console.log('Received joined_chat event:', data);
-      
+
       // After joining room, fetch messages using the roomId
       if (data.roomId && data.otherUserId) {
         console.log('Joined room, now fetching messages for:', data.otherUserId);
@@ -428,7 +429,7 @@ export const ChatProvider = ({ children }) => {
   // Listen for all_messages event (message history response)
   useEffect(() => {
     console.log('Setting up all_messages listener, isConnected:', isConnected);
-    
+
     const handleAllMessages = (data) => {
       console.log('Received all_messages event:', data);
 
@@ -472,7 +473,7 @@ export const ChatProvider = ({ children }) => {
 
     onJoinedGroup(handleJoinedGroup);
 
-    return () => {};
+    return () => { };
   }, [isConnected, onJoinedGroup, getGroupMessages]);
 
   // Listen for message_sent confirmation (update temp message)
@@ -481,9 +482,9 @@ export const ChatProvider = ({ children }) => {
 
     const handleMessageSent = (data) => {
       console.log('Message sent confirmation:', data);
-      
+
       const receiverId = data.receiverId;
-      
+
       // Find and update the pending message
       setMessages(prev => {
         const chatMessages = prev[receiverId] || [];
@@ -499,7 +500,7 @@ export const ChatProvider = ({ children }) => {
           }
           return msg;
         });
-        
+
         return {
           ...prev,
           [receiverId]: updatedMessages
@@ -520,17 +521,17 @@ export const ChatProvider = ({ children }) => {
 
     const handleReceiveMessage = (data) => {
       console.log('Received incoming message:', data);
-      
+
       const senderId = data.senderId;
-      
+
       // Ensure imageUrl has proper protocol
       let fullImageUrl = data.imageUrl || null;
       if (fullImageUrl && !fullImageUrl.startsWith('http')) {
         fullImageUrl = `http://${fullImageUrl}`;
       }
-      
+
       const messageType = fullImageUrl ? getMessageTypeFromUrl(fullImageUrl) : 'text';
-      
+
       const newMessage = {
         id: `msg-${Date.now()}`,
         text: data.message,
@@ -546,16 +547,16 @@ export const ChatProvider = ({ children }) => {
           url: fullImageUrl
         } : null,
       };
-      
+
       // Add message to chat
       setMessages(prev => {
         const existingMessages = prev[senderId] || [];
-        
+
         // Avoid duplicates
         if (existingMessages.find(m => m.timestamp === data.timestamp && m.text === data.message)) {
           return prev;
         }
-        
+
         return {
           ...prev,
           [senderId]: [...existingMessages, newMessage]
@@ -638,7 +639,7 @@ export const ChatProvider = ({ children }) => {
       const groupId = data.groupId;
       const isCurrentUsersMessage =
         (data.senderId?._id || data.senderId) === currentUserId;
-      
+
       setMessages(prev => {
         const existingMessages = prev[groupId] || [];
 
@@ -768,7 +769,7 @@ export const ChatProvider = ({ children }) => {
 
     onGroupUserJoined(handleGroupUserJoined);
 
-    return () => {};
+    return () => { };
   }, [isConnected, onGroupUserJoined, activeChat, getGroupMessages, currentUserId]);
 
   useEffect(() => {
@@ -780,7 +781,7 @@ export const ChatProvider = ({ children }) => {
 
     onGroupMessagesRead(handleGroupMessagesRead);
 
-    return () => {};
+    return () => { };
   }, [isConnected, onGroupMessagesRead]);
 
   // Listen for message_deleted_for_me event
@@ -789,9 +790,9 @@ export const ChatProvider = ({ children }) => {
 
     const handleMessageDeletedForMe = (data) => {
       console.log('Message deleted for me:', data);
-      
+
       const { messageId, otherUserId } = data;
-      
+
       // Remove message from the chat
       setMessages(prev => ({
         ...prev,
@@ -825,7 +826,7 @@ export const ChatProvider = ({ children }) => {
 
     onGroupMessageDeletedForMe(handleGroupMessageDeletedForMe);
 
-    return () => {};
+    return () => { };
   }, [isConnected, onGroupMessageDeletedForMe]);
 
   // Listen for message_deleted_for_everyone event
@@ -834,20 +835,20 @@ export const ChatProvider = ({ children }) => {
 
     const handleMessageDeletedForEveryone = (data) => {
       console.log('Message deleted for everyone:', data);
-      
+
       const { messageId, otherUserId } = data;
-      
+
       // Remove message from all chats (both sender and receiver sides)
       setMessages(prev => {
         const updatedMessages = { ...prev };
-        
+
         // Try to remove from all possible chat keys
         Object.keys(updatedMessages).forEach(chatId => {
           updatedMessages[chatId] = updatedMessages[chatId]?.filter(
             m => m.id !== messageId && m._id !== messageId
           ) || [];
         });
-        
+
         return updatedMessages;
       });
     };
@@ -878,7 +879,7 @@ export const ChatProvider = ({ children }) => {
 
     onGroupMessageDeletedForEveryone(handleGroupMessageDeletedForEveryone);
 
-    return () => {};
+    return () => { };
   }, [isConnected, onGroupMessageDeletedForEveryone]);
 
   // Listen for marked_as_read event (when receiver reads our messages)
@@ -927,55 +928,6 @@ export const ChatProvider = ({ children }) => {
     };
   }, [isConnected, onMessagesRead, getReadEventOtherUserId, activeChat, markOutgoingMessagesAsRead]);
 
-  // Fetch messages when active chat changes
-  useEffect(() => {
-    console.log('ACTIVE CHAT EFFECT TRIGGERED:', { isConnected, activeChat: activeChat?.id, type: activeChat?.type });
-    
-    if (!isConnected) {
-      console.log('SKIPPING: Socket not connected');
-      return;
-    }
-    if (!activeChat) {
-      console.log('SKIPPING: No active chat selected');
-      return;
-    }
-
-    console.log('ACTIVE CHAT SELECTED:', activeChat.id, 'Type:', activeChat.type);
-
-    let otherUserId = null;
-
-    // For private chats: join then immediately fetch messages
-    if (activeChat.type === 'private') {
-      otherUserId = activeChat.participants[0];
-      console.log('CALLING joinPrivateChat and getMessages for:', otherUserId);
-      joinPrivateChat(otherUserId);
-      getMessages(otherUserId);
-    } else if (activeChat.type === 'group') {
-      console.log('CALLING join_group and get_messages for group:', activeChat.id);
-      joinChat(activeChat.id, activeChat.type);
-      getGroupMessages(activeChat.id);
-    }
-
-    if (activeChat.type === 'private' && otherUserId) {
-      markAsRead(activeChat.id);
-    } else if (activeChat.type === 'group') {
-      markAsRead(activeChat.id);
-    } else {
-      setChats(prev => prev.map(chat =>
-        chat.id === activeChat.id ? { ...chat, unread: 0 } : chat
-      ));
-    }
-
-    return () => {
-      console.log('LEAVING CHAT:', activeChat.id);
-      if (activeChat.type === 'group') {
-        leaveGroup(activeChat.id);
-      } else {
-        leaveChat(activeChat.id);
-      }
-    };
-  }, [activeChat, isConnected, joinPrivateChat, joinChat, leaveChat, leaveGroup, getMessages, getGroupMessages]);
-
   // Search users and groups
   const searchUsersAndGroups = useCallback(async (query) => {
     if (!authToken || !query.trim()) {
@@ -986,7 +938,7 @@ export const ChatProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await searchUsers(query, authToken);
-      
+
       if (response.statusCode === 200 && response.data) {
         setSearchResults({
           users: response.data.users || [],
@@ -1020,13 +972,13 @@ export const ChatProvider = ({ children }) => {
     if (!chat) return;
 
     let imageUrl = '';
-    
+
     // If file is image, upload it first
     if (file) {
       try {
         const formData = new FormData();
         formData.append('image', file);
-        
+
         const response = await fetch('https://gh802w59-3000.inc1.devtunnels.ms/chatmedia/upload', {
           method: 'POST',
           headers: {
@@ -1036,7 +988,7 @@ export const ChatProvider = ({ children }) => {
         });
 
         console.log('File upload response:', response);
-        
+
         const result = await response.json();
         if (result.statusCode === 200 && result.data?.imageUrl) {
           imageUrl = result.data.imageUrl;
@@ -1049,13 +1001,13 @@ export const ChatProvider = ({ children }) => {
 
     // Optimistically add message to UI
     const tempId = `temp-${Date.now()}`;
-    
+
     // Ensure imageUrl has proper protocol
     let fullImageUrl = imageUrl;
     if (fullImageUrl && !fullImageUrl.startsWith('http')) {
       fullImageUrl = `http://${fullImageUrl}`;
     }
-    
+
     const tempMessage = {
       id: tempId,
       text: text,
@@ -1161,6 +1113,87 @@ export const ChatProvider = ({ children }) => {
       };
     });
   }, [socketMarkAsRead, markGroupMessagesAsRead, currentUserId]);
+
+  // Fetch messages only when the selected chat identity changes
+  useEffect(() => {
+    const nextChatId = activeChat?.id || null;
+    const nextChatType = activeChat?.type || null;
+    const nextPrivateUserId =
+      nextChatType === 'private' ? activeChat?.participants?.[0] || nextChatId : null;
+
+    console.log('ACTIVE CHAT EFFECT TRIGGERED:', {
+      isConnected,
+      nextChatId,
+      nextChatType,
+      nextPrivateUserId
+    });
+
+    if (!isConnected || !nextChatId || !nextChatType) {
+      return;
+    }
+
+    const previousRoom = joinedRoomRef.current;
+    const isSameRoom =
+      previousRoom.id === nextChatId &&
+      previousRoom.type === nextChatType &&
+      previousRoom.privateUserId === nextPrivateUserId;
+
+    if (isSameRoom) {
+      return;
+    }
+
+    if (previousRoom.id) {
+      if (previousRoom.type === 'group') {
+        leaveGroup(previousRoom.id);
+      } else {
+        leaveChat(previousRoom.id);
+      }
+    }
+
+    if (nextChatType === 'private' && nextPrivateUserId) {
+      console.log('CALLING joinPrivateChat and getMessages for:', nextPrivateUserId);
+      joinPrivateChat(nextPrivateUserId);
+      getMessages(nextPrivateUserId);
+    } else if (nextChatType === 'group') {
+      console.log('CALLING join_group and get_messages for group:', nextChatId);
+      joinChat(nextChatId, 'group');
+      getGroupMessages(nextChatId);
+    }
+
+    markAsRead(nextChatId);
+
+    joinedRoomRef.current = {
+      id: nextChatId,
+      type: nextChatType,
+      privateUserId: nextPrivateUserId
+    };
+  }, [
+    activeChat?.id,
+    activeChat?.type,
+    activeChat?.participants,
+    isConnected,
+    joinPrivateChat,
+    joinChat,
+    leaveChat,
+    leaveGroup,
+    getMessages,
+    getGroupMessages,
+    markAsRead
+  ]);
+
+  // Leave currently joined room on unmount
+  useEffect(() => {
+    return () => {
+      const previousRoom = joinedRoomRef.current;
+      if (!previousRoom.id) return;
+
+      if (previousRoom.type === 'group') {
+        leaveGroup(previousRoom.id);
+      } else {
+        leaveChat(previousRoom.id);
+      }
+    };
+  }, [leaveChat, leaveGroup]);
 
   const createChat = useCallback((type, name, participantIds, avatar = '') => {
     const newChat = {
