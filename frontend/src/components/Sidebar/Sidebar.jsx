@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Settings, Bell, LogOut, Menu, X } from 'lucide-react';
-import { logoutUser } from '../../services/apiService';
+import { useAuth } from '../../contexts/AuthContext';
 import './Sidebar.css';
 
 const Sidebar = ({ onCreateClick, onProfileClick }) => {
+  const { logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -20,13 +21,7 @@ const Sidebar = ({ onCreateClick, onProfileClick }) => {
 
   const handleLogout = async () => {
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (authToken) {
-        await logoutUser(authToken);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        window.location.href = '/';
-      }
+      await logout();
     } catch (error) {
       console.error('Logout error:', error);
     }

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { getChatMembers, searchUsers } from '../services/apiService';
 import { formatTime } from '../data/mockData';
 import { useSocket } from './SocketContext';
+import { useAuth } from './AuthContext';
 
 const ChatContext = createContext();
 
@@ -14,18 +15,30 @@ export const useChat = () => {
 };
 
 export const ChatProvider = ({ children }) => {
+  const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState({});
   const [activeChat, setActiveChatState] = useState(() => {
-    // Restore active chat from localStorage on mount
-    const saved = localStorage.getItem('activeChat');
-    return saved ? JSON.parse(saved) : null;
+    // Don't restore active chat from localStorage on mount to prevent auto-opening chat panel
+    return null;
   });
   const [users, setUsers] = useState([]);
   const [searchResults, setSearchResults] = useState({ users: [], groups: [] });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [authToken, setAuthToken] = useState(localStorage.getItem('authToken'));
+  const authToken = localStorage.getItem('authToken');
+
+  useEffect(() => {
+    setActiveChatState(null);
+    localStorage.removeItem('activeChat');
+    setMessages({});
+    setSearchResults({ users: [], groups: [] });
+
+    if (!user || !authToken) {
+      setChats([]);
+      setUsers([]);
+    }
+  }, [user, authToken]);
   const chatsRef = useRef([]);
   const messagesRef = useRef({});
   const lastReadEmitRef = useRef({});
@@ -307,7 +320,7 @@ export const ChatProvider = ({ children }) => {
   // Load chat members on mount
   useEffect(() => {
     const loadChatMembers = async () => {
-      if (!authToken) return;
+      if (!authToken || !user) return;
       
       try {
         setLoading(true);
@@ -334,7 +347,7 @@ export const ChatProvider = ({ children }) => {
     };
 
     loadChatMembers();
-  }, [authToken, transformChatData, transformUsersData]);
+  }, [authToken, user, transformChatData, transformUsersData]);
 
   // Listen for joined_chat event (room confirmation from backend)
   useEffect(() => {

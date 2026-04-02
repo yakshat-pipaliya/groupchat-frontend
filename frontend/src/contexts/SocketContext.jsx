@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { socketService } from '../services/socketService';
+import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
 
@@ -16,10 +17,17 @@ export const SocketProvider = ({ children }) => {
   const [socketId, setSocketId] = useState({ private: null, group: null });
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState({});
+  const { user } = useAuth();
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (!token) return;
+    if (!token || !user) {
+      socketService.disconnect();
+      setIsConnected(false);
+      setSocketId({ private: null, group: null });
+      setOnlineUsers(new Set());
+      return;
+    }
 
     const { privateSocket, groupSocket } = socketService.connect(token);
 
@@ -45,8 +53,9 @@ export const SocketProvider = ({ children }) => {
       privateSocket?.off('disconnect', syncConnectionState);
       groupSocket?.off('connect', syncConnectionState);
       groupSocket?.off('disconnect', syncConnectionState);
+      socketService.disconnect();
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!isConnected) return;

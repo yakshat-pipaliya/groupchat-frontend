@@ -59,13 +59,8 @@ export const AuthProvider = ({ children }) => {
         
         setUser(data.user);
         
-        // Show success message and redirect
+        // Show success message
         toast.success(`Welcome back, ${data.user.firstname || data.user.username}!`);
-        
-        // Force a re-render by updating state
-        setTimeout(() => {
-          window.location.href = '/'; // Force redirect to home page
-        }, 1500);
         
         return data;
       } else {

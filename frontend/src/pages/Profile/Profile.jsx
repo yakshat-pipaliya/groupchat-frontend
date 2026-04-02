@@ -55,12 +55,7 @@ const Profile = ({ onBackToHome }) => {
         toast.error('Session expired. Please login again.');
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-
-        if (onBackToHome) {
-          onBackToHome();
-        } else {
-          window.location.href = '/';
-        }
+        onBackToHome();
       } else {
         toast.error('Failed to load profile');
       }
@@ -95,11 +90,7 @@ const Profile = ({ onBackToHome }) => {
   }, [user?.profileImage]);
 
   const handleBackToChat = () => {
-    if (onBackToHome) {
-      onBackToHome();
-    } else {
-      window.location.href = '/';
-    }
+    onBackToHome();
   };
 
   const handleImageUpload = (event) => {

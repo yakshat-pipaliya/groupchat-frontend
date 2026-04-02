@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SocketProvider } from './contexts/SocketContext';
+import { ChatProvider } from './contexts/ChatContext';
+import { MessageSquare } from 'lucide-react';
 import Home from './pages/Home/Home';
 import Login from './pages/Login/Login';
 import Profile from './pages/Profile/Profile';
@@ -49,8 +52,31 @@ function AppContent() {
   if (loading) {
     return (
       <div className="loading-screen">
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
+        <div className="loading-orb loading-orb-one"></div>
+        <div className="loading-orb loading-orb-two"></div>
+        <div className="loading-panel">
+          <div className="loading-brand">
+            <div className="loading-brand-icon">
+              <MessageSquare size={26} />
+            </div>
+            <div>
+              <h1>ChatApp</h1>
+              <p>Preparing your conversations</p>
+            </div>
+          </div>
+          <div className="loading-spinner-shell">
+            <div className="loading-spinner-ring"></div>
+            <div className="loading-spinner-core"></div>
+          </div>
+          <div className="loading-progress">
+            <span></span>
+          </div>
+          <div className="loading-dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -79,7 +105,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <SocketProvider>
+        <ChatProvider>
+          <AppContent />
+        </ChatProvider>
+      </SocketProvider>
       <ToastContainer
         position="top-right"
         autoClose={3000}
