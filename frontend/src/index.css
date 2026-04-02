@@ -1,65 +1,71 @@
-/* WhatsApp Chat App Design System */
+/* Chat App Design System */
 :root {
-  /* WhatsApp Colors */
-  --whatsapp-teal: #008069;
-  --whatsapp-teal-dark: #005c4b;
-  --whatsapp-teal-light: #00a884;
-  --whatsapp-green: #25d366;
-  --whatsapp-bg: #efeae2;
-  --whatsapp-chat-bg: #e5ddd5;
-  --whatsapp-panel-bg: #f0f2f5;
-  --whatsapp-header-bg: #f0f2f5;
-  --whatsapp-bubble-sent: #d9fdd3;
-  --whatsapp-bubble-received: #ffffff;
-  --whatsapp-text: #111b21;
-  --whatsapp-text-secondary: #667781;
-  --whatsapp-text-meta: #8696a0;
-  --whatsapp-border: #d1d7db;
-  --whatsapp-input-bg: #ffffff;
-  --whatsapp-icon: #54656f;
-  --whatsapp-tick: #53bdeb;
-  --whatsapp-encryption-bg: #ffeecd;
-  --whatsapp-encryption-text: #54656f;
+  --app-bg-gradient:
+    radial-gradient(circle at top left, rgba(124, 140, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(70, 216, 201, 0.14), transparent 22%),
+    linear-gradient(145deg, #081120 0%, #10233f 48%, #183a63 100%);
+
+  --whatsapp-teal: #5f74ff;
+  --whatsapp-teal-dark: #4358d8;
+  --whatsapp-teal-light: #7c8cff;
+  --whatsapp-green: #46d8c9;
+  --whatsapp-bg: #0b1424;
+  --whatsapp-chat-bg: #0e1830;
+  --whatsapp-panel-bg: #121f37;
+  --whatsapp-header-bg: #14233d;
+  --whatsapp-bubble-sent: #1c3158;
+  --whatsapp-bubble-received: #15233d;
+  --whatsapp-text: #f8fbff;
+  --whatsapp-text-secondary: #c3d1ee;
+  --whatsapp-text-meta: #8ea3c7;
+  --whatsapp-border: rgba(167, 194, 255, 0.14);
+  --whatsapp-input-bg: #0f1b31;
+  --whatsapp-icon: #a7c2ff;
+  --whatsapp-tick: #5db0ff;
+  --whatsapp-encryption-bg: rgba(124, 140, 255, 0.12);
+  --whatsapp-encryption-text: #d8e6ff;
   
   /* Primary Colors */
-  --primary-color: #00a884;
-  --primary-hover: #008069;
-  --secondary-color: #25d366;
-  --accent-color: #53bdeb;
+  --primary-color: #7c8cff;
+  --primary-hover: #5f74ff;
+  --secondary-color: #46d8c9;
+  --accent-color: #5db0ff;
   
   /* Status Colors */
-  --online-color: #25d366;
-  --offline-color: #8696a0;
+  --online-color: #46d8c9;
+  --offline-color: #7287ad;
   --away-color: #f59e0b;
-  --error-color: #ef4444;
+  --error-color: #ff7c90;
   --warning-color: #f59e0b;
-  --success-color: #25d366;
+  --success-color: #46d8c9;
   
-  /* Background Colors - Light Mode (WhatsApp Style) */
-  --bg-dark: #dadbd3;
-  --bg-card: #ffffff;
-  --bg-hover: #f5f6f6;
-  --bg-input: #f0f2f5;
+  /* Background Colors */
+  --bg-dark: #081120;
+  --bg-card: #121f37;
+  --bg-hover: #1b2c4c;
+  --bg-input: #0f1b31;
+  --bg-soft: #162743;
+  --bg-elevated: rgba(18, 31, 55, 0.92);
   
   /* Text Colors */
-  --text-primary: #111b21;
-  --text-secondary: #667781;
-  --text-muted: #8696a0;
+  --text-primary: #f8fbff;
+  --text-secondary: #c3d1ee;
+  --text-muted: #8ea3c7;
   --text-inverse: #ffffff;
   
   /* Border Colors */
-  --border-color: #d1d7db;
-  --border-focus: #00a884;
+  --border-color: rgba(167, 194, 255, 0.14);
+  --border-focus: #5db0ff;
   
   /* Gradients */
-  --gradient-1: linear-gradient(135deg, #00a884 0%, #008069 100%);
-  --gradient-2: linear-gradient(135deg, #25d366 0%, #00a884 100%);
+  --gradient-1: linear-gradient(135deg, #7c8cff 0%, #5db0ff 52%, #46d8c9 100%);
+  --gradient-2: linear-gradient(145deg, #081120 0%, #10233f 48%, #183a63 100%);
   
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.14);
+  --shadow-md: 0 14px 30px rgba(0, 0, 0, 0.18);
+  --shadow-lg: 0 20px 44px rgba(0, 0, 0, 0.22);
+  --shadow-xl: 0 28px 70px rgba(0, 0, 0, 0.28);
   
   /* Border Radius */
   --radius-sm: 4px;
@@ -96,7 +102,7 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
-  background: var(--bg-dark);
+  background: var(--app-bg-gradient);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -104,22 +110,17 @@
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-dark: #0f0f12;
-    --bg-card: #1a1a1f;
-    --bg-hover: #25252b;
-    --bg-input: #2a2a32;
-    
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
-    
-    --border-color: #2e303a;
-    --border-focus: #6366f1;
-    
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    --bg-dark: #081120;
+    --bg-card: #121f37;
+    --bg-hover: #1b2c4c;
+    --bg-input: #0f1b31;
+    --bg-soft: #162743;
+    --bg-elevated: rgba(18, 31, 55, 0.92);
+    --text-primary: #f8fbff;
+    --text-secondary: #c3d1ee;
+    --text-muted: #8ea3c7;
+    --border-color: rgba(167, 194, 255, 0.14);
+    --border-focus: #5db0ff;
   }
 }
 
@@ -137,7 +138,7 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg-dark);
+  background: var(--app-bg-gradient);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

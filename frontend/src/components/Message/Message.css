@@ -37,7 +37,7 @@
 .avatar-placeholder {
   width: 28px;
   height: 28px;
-  background: #00a884;
+  background: var(--gradient-1);
   color: white;
   display: flex;
   align-items: center;
@@ -58,7 +58,7 @@
 /* Sender name */
 .sender-name {
   font-size: 12px;
-  color: #00a884;
+  color: var(--accent-color);
   margin-bottom: 4px;
   font-weight: 500;
   padding-left: 8px;
@@ -83,15 +83,15 @@
 
 /* Sent Messages - WhatsApp Green */
 .message.sent .message-bubble {
-  background: #d9fdd3;
-  color: #111b21;
+  background: linear-gradient(135deg, rgba(124, 140, 255, 0.28), rgba(93, 176, 255, 0.2));
+  color: var(--text-primary);
   border-top-right-radius: 0;
 }
 
 /* Received Messages - White */
 .message.received .message-bubble {
-  background: #ffffff;
-  color: #111b21;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
   border-top-left-radius: 0;
 }
 
@@ -102,7 +102,7 @@
   justify-content: flex-end;
   gap: 4px;
   font-size: 11px;
-  color: #667781;
+  color: var(--text-muted);
   margin-top: 2px;
   float: right;
   margin-left: 8px;
@@ -112,7 +112,7 @@
 .read-status-ticks {
   display: flex;
   align-items: center;
-  color: #8696a0;
+  color: var(--text-muted);
 }
 
 .read-status-ticks.read {
@@ -156,7 +156,7 @@
 }
 
 .message-actions-btn:hover {
-  color: #667781;
+  color: var(--text-secondary);
   background: rgba(0, 0, 0, 0.05);
 }
 
@@ -165,7 +165,7 @@
   position: absolute;
   top: 100%;
   right: 0;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 8px 0;
   z-index: 100;
@@ -182,7 +182,7 @@
   width: 100%;
   background: none;
   border: none;
-  color: #111b21;
+  color: var(--text-primary);
   cursor: pointer;
   font-size: 14px;
   border-radius: 0;
@@ -190,8 +190,8 @@
 }
 
 .message-menu button:hover {
-  background: #f5f6f6;
-  color: #111b21;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
 }
 
 /* File Preview */
