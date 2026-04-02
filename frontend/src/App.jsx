@@ -7,6 +7,8 @@ import Home from './pages/Home/Home';
 import Login from './pages/Login/Login';
 import Profile from './pages/Profile/Profile';
 import { ToastContainer } from 'react-toastify';
+import { CallProvider } from './contexts/CallContext';
+import CallOverlay from './components/CallOverlay/CallOverlay';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
@@ -105,11 +107,14 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <SocketProvider>
-        <ChatProvider>
-          <AppContent />
-        </ChatProvider>
-      </SocketProvider>
+      <CallProvider>
+        <SocketProvider>
+          <ChatProvider>
+            <AppContent />
+            <CallOverlay />
+          </ChatProvider>
+        </SocketProvider>
+      </CallProvider>
       <ToastContainer
         position="top-right"
         autoClose={3000}

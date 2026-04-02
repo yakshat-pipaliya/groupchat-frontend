@@ -6,6 +6,7 @@ import { getGroupDetails, getUserProfile } from '../../services/apiService.js';
 import Message from '../Message/Message.jsx';
 import MessageInput from '../MessageInput/MessageInput.jsx';
 import './ChatWindow.css';
+import { useCall } from '../../contexts/CallContext';
 
 const ChatWindow = ({ onBackToChatList }) => {
   const { activeChat, getChatMessages, getUser, markAsRead, deleteMessage } = useChat();
@@ -15,6 +16,7 @@ const ChatWindow = ({ onBackToChatList }) => {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [groupDetails, setGroupDetails] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
+  const { startCall, startGroupCall } = useCall();
   const [groupDetailsLoading, setGroupDetailsLoading] = useState(false);
   const [groupDetailsError, setGroupDetailsError] = useState('');
   const [userDetailsLoading, setUserDetailsLoading] = useState(false);
@@ -182,10 +184,22 @@ const ChatWindow = ({ onBackToChatList }) => {
         </div>
 
         <div className="chat-header-actions">
-          <button className="btn-icon" title="Voice call">
+          <button className="btn-icon" title="Voice call" onClick={() => {
+            if (activeChat.type === 'group') {
+              startGroupCall(activeChat.id, 'audio');
+            } else {
+              startCall(activeChat.participants[0], 'audio');
+            }
+          }}>
             <Phone size={20} />
           </button>
-          <button className="btn-icon" title="Video call">
+          <button className="btn-icon" title="Video call" onClick={() => {
+            if (activeChat.type === 'group') {
+              startGroupCall(activeChat.id, 'video');
+            } else {
+              startCall(activeChat.participants[0], 'video');
+            }
+          }}>
             <Video size={20} />
           </button>
           <button className="btn-icon" title="Info" onClick={handleToggleInfoPanel}>
