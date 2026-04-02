@@ -155,7 +155,7 @@ export const getChatMembers = async (authToken) => {
   };
 
   try {
-    const response = await api.get('/user/getchatmemb', config);
+    const response = await api.get('/user/getchatmember', config);
 
     return response.data;
   } catch (error) {
