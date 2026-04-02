@@ -15,6 +15,16 @@ import './App.css';
 function AppContent() {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState('home');
+ useEffect(() => {
+    if (!user) return;
+
+    const isAdmin = user.role === 'admin';
+    const isAdminPage = window.location.pathname.endsWith('/admin.html');
+
+    if (isAdmin && !isAdminPage) {
+      window.location.replace('/admin.html');
+    }
+  }, [user]);
 
   // Initialize current view from URL on mount
   useEffect(() => {
@@ -86,7 +96,9 @@ function AppContent() {
   if (!user) {
     return <Login />;
   }
-
+ if (user.role === 'admin') {
+    return null;
+  }
   // Simple routing for authenticated users
   const renderView = () => {
     switch (currentView) {
