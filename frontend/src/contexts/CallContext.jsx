@@ -183,11 +183,15 @@ export const CallProvider = ({ children }) => {
 
     socket.on('call_accepted', async (d) => {
       setCallStatus('connecting');
+      // Update activeCall with roomId from backend
+      updateActiveCall(prev => ({ ...prev, roomId: d.roomId, targetId: d.receiverId }));
       await setupPeer(d.roomId, d.receiverId, false, socket);
     });
 
-    socket.on('call_connected', () => {
-      setCallStatus('active');
+    socket.on('call_connected', (d) => {
+      setCallStatus('connecting');
+      // Receiver: update activeCall with roomId and callerId (as targetId)
+      updateActiveCall(prev => ({ ...prev, roomId: d.roomId, targetId: d.callerId }));
     });
 
     socket.on('call_rejected', () => resetCallStates());
