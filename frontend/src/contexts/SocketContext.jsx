@@ -61,10 +61,12 @@ export const SocketProvider = ({ children }) => {
     if (!isConnected) return;
 
     const handleUserOnline = (data) => {
+      console.log('[SocketContext] User online:', data);
       setOnlineUsers(prev => new Set([...prev, data.userId]));
     };
 
     const handleUserOffline = (data) => {
+      console.log('[SocketContext] User offline:', data);
       setOnlineUsers(prev => {
         const next = new Set(prev);
         next.delete(data.userId);
@@ -72,12 +74,22 @@ export const SocketProvider = ({ children }) => {
       });
     };
 
+    const handleOnlineUsersList = (data) => {
+      console.log('[SocketContext] Received online users list:', data);
+      if (Array.isArray(data)) {
+        const userIds = data.map(user => user.userId);
+        setOnlineUsers(new Set(userIds));
+      }
+    };
+
     socketService.onUserOnline(handleUserOnline);
     socketService.onUserOffline(handleUserOffline);
+    socketService.onOnlineUsersList?.(handleOnlineUsersList);
 
     return () => {
       socketService.removeListener('user_online', 'private');
       socketService.removeListener('user_offline', 'private');
+      socketService.removeListener('online_users_list', 'private');
     };
   }, [isConnected]);
 

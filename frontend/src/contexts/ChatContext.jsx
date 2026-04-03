@@ -523,6 +523,7 @@ export const ChatProvider = ({ children }) => {
       console.log('Received incoming message:', data);
 
       const senderId = data.senderId;
+      if (!senderId) return;
 
       // Ensure imageUrl has proper protocol
       let fullImageUrl = data.imageUrl || null;
@@ -563,23 +564,79 @@ export const ChatProvider = ({ children }) => {
         };
       });
 
-      // Update last message in chat list
-      setChats(prev => prev.map(chat => {
-        if (chat.id === senderId) {
-          return {
-            ...chat,
-            lastMessage: {
-              text: data.message,
-              timestamp: data.timestamp || new Date().toISOString(),
-              sender: senderId,
-              isRead: false,
-              file: !!data.imageUrl
-            },
-            unread: activeChat?.id === senderId ? 0 : (chat.unread || 0) + 1
-          };
+      // Update last message in chat list and add new chat if sender doesn't exist
+      setChats(prev => {
+        const existingChatIndex = prev.findIndex(chat => chat.id === senderId);
+        
+        // If chat exists, update it
+        if (existingChatIndex >= 0) {
+          return prev.map(chat => {
+            if (chat.id === senderId) {
+              return {
+                ...chat,
+                lastMessage: {
+                  text: data.message,
+                  timestamp: data.timestamp || new Date().toISOString(),
+                  sender: senderId,
+                  isRead: false,
+                  file: !!data.imageUrl
+                },
+                unread: activeChat?.id === senderId ? 0 : (chat.unread || 0) + 1
+              };
+            }
+            return chat;
+          });
         }
-        return chat;
-      }));
+        
+        // If chat doesn't exist, create new chat entry
+        const senderName = data.senderName || 
+          (data.senderData?.firstname && data.senderData?.lastname 
+            ? `${data.senderData.firstname} ${data.senderData.lastname}`
+            : data.senderData?.username) || 
+          'Unknown User';
+        
+        const newChat = {
+          id: senderId,
+          type: 'private',
+          name: senderName,
+          participants: [senderId],
+          avatar: data.senderData?.profileImage || null,
+          lastMessage: {
+            text: data.message,
+            timestamp: data.timestamp || new Date().toISOString(),
+            sender: senderId,
+            isRead: false,
+            file: !!data.imageUrl
+          },
+          unread: 1,
+          online: true
+        };
+        
+        return [newChat, ...prev];
+      });
+
+      // Also add sender to users list if not exists
+      setUsers(prevUsers => {
+        const exists = prevUsers.some(u => u.id === senderId);
+        if (exists) return prevUsers;
+        
+        const senderName = data.senderName || 
+          (data.senderData?.firstname && data.senderData?.lastname 
+            ? `${data.senderData.firstname} ${data.senderData.lastname}`
+            : data.senderData?.username) || 
+          'Unknown User';
+        
+        return [
+          {
+            id: senderId,
+            name: senderName,
+            avatar: data.senderData?.profileImage || null,
+            status: 'online',
+            lastSeen: null
+          },
+          ...prevUsers
+        ];
+      });
 
       if (activeChat?.type === 'private' && activeChat.id === senderId) {
         markAsRead(activeChat.id, true);

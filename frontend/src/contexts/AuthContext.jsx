@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { loginWithFCM } from '../services/apiService';
+import { loginWithFCM, updateFCMToken } from '../services/apiService';
 import { getFCMToken } from '../services/fcmService';
 
 const AuthContext = createContext();
@@ -39,6 +39,38 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // Update FCM token after login and periodically
+  useEffect(() => {
+    const updateToken = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+
+      try {
+        const fcmToken = await getFCMToken();
+        if (fcmToken) {
+          await updateFCMToken(fcmToken, token);
+          console.log('FCM token updated successfully');
+        }
+      } catch (error) {
+        console.error('Failed to update FCM token:', error);
+      }
+    };
+
+    // Update FCM token on mount if user is logged in
+    if (user) {
+      updateToken();
+    }
+
+    // Set up periodic token refresh (every 24 hours)
+    const interval = setInterval(() => {
+      if (user) {
+        updateToken();
+      }
+    }, 24 * 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   const login = async (email, password) => {
     try {
       setLoading(true);
@@ -48,7 +80,9 @@ export const AuthProvider = ({ children }) => {
       const fcmToken = await getFCMToken();
       
       // Always attempt login with or without FCM token
-      const response = await loginWithFCM(email, password, fcmToken === null ? '' : fcmToken);
+      // Pass null if fcmToken is falsy, backend will handle it
+      const tokenToSend = fcmToken || null;
+      const response = await loginWithFCM(email, password, tokenToSend);
       
       // Handle the response structure
       const { data } = response;
@@ -58,6 +92,17 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('userData', JSON.stringify(data.user));
         
         setUser(data.user);
+        
+        // Update FCM token immediately after login if we have one
+        // This ensures token is saved even if initial login didn't have it
+        if (fcmToken) {
+          try {
+            await updateFCMToken(fcmToken, data.token);
+            console.log('FCM token updated successfully after login');
+          } catch (fcmError) {
+            console.error('Failed to update FCM token after login:', fcmError);
+          }
+        }
         
         // Show success message
         toast.success(`Welcome back, ${data.user.firstname || data.user.username}!`);

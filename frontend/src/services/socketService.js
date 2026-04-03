@@ -327,6 +327,10 @@ class SocketService {
     this.registerListener('user_offline', callback, 'private');
   }
 
+  onOnlineUsersList(callback) {
+    this.registerListener('online_users_list', callback, 'private');
+  }
+
   onMessagesRead(callback) {
     this.registerListener('messages_read', callback, 'private');
   }

@@ -40,7 +40,7 @@ export const registerWithFCM = async (userData, fcmToken) => {
   }
 };
 
-export const updateFCMToken = async (userId, fcmToken, authToken) => {
+export const updateFCMToken = async (fcmToken, authToken) => {
   try {
     const response = await api.put(
       '/user/fcm-token',

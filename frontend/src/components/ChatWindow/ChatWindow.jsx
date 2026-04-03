@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Phone, Video, Info, ArrowLeft, Lock, X, Users } from 'lucide-react';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
 import { getGroupDetails, getUserProfile } from '../../services/apiService.js';
 import Message from '../Message/Message.jsx';
 import MessageInput from '../MessageInput/MessageInput.jsx';
@@ -11,6 +12,7 @@ import { useCall } from '../../contexts/CallContext';
 const ChatWindow = ({ onBackToChatList }) => {
   const { activeChat, getChatMessages, getUser, markAsRead, deleteMessage } = useChat();
   const { user } = useAuth();
+  const { isUserOnline, onlineUsers } = useSocket();
   const messagesEndRef = useRef(null);
   const messages = activeChat ? getChatMessages(activeChat.id) : [];
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
@@ -53,8 +55,9 @@ const ChatWindow = ({ onBackToChatList }) => {
 
   const getOnlineStatus = () => {
     if (activeChat.type === 'group') return `${activeChat.memberCount} members`;
-    const user = getUser(activeChat.participants[0]);
-    return user?.status === 'online' ? 'online' : 'offline';
+    const otherUserId = activeChat.participants?.[0];
+    const isOnline = isUserOnline?.(otherUserId) || false;
+    return isOnline ? 'online' : 'offline';
   };
 
   const loadGroupDetails = useCallback(async (groupId) => {
@@ -172,7 +175,7 @@ const ChatWindow = ({ onBackToChatList }) => {
                 </div>
               )}
               {activeChat.type === 'private' && (
-                <span className={`header-status-dot ${getUser(activeChat.participants[0])?.status}`} />
+                <span className={`header-status-dot ${isUserOnline?.(activeChat.participants?.[0]) ? 'online' : 'offline'}`} />
               )}
             </div>
 

@@ -3,17 +3,6 @@ importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js');
 
 // Initialize Firebase in the service worker
-// firebase.initializeApp({
-//   apiKey: "AIzaSyDIr-SSna8YAnsQI7FpBdWPWKUP5ZGXxlY",
-//   authDomain: "fir-test-55401.firebaseapp.com",
-//   databaseURL: "https://fir-test-55401-default-rtdb.firebaseio.com",
-//   projectId: "fir-test-55401",
-//   storageBucket: "fir-test-55401.firebasestorage.app",
-//   messagingSenderId: "746089020187",
-//   appId: "1:746089020187:web:1e1c8fb701e5d0192a71be",
-//   measurementId: "G-JRYRF45FJ2"
-// });
-
 firebase.initializeApp({
   apiKey: "AIzaSyAt8jhL3ugh_Fuc9lbS1Nv1wG5hemSX0qk",
   authDomain: "groupchat-d3e5f.firebaseapp.com",
@@ -26,17 +15,64 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Track recently shown notifications to prevent duplicates
+const recentNotifications = new Map();
+
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('Received background message: ', payload);
+  console.log('[FCM SW] Received background message:', payload);
   
-  // Customize notification here
-  const notificationTitle = payload.notification.title;
+  // Create a unique key using messageId from data or fallback to title+body+timestamp
+  const messageId = payload.data?.messageId || payload.messageId;
+  const notificationKey = messageId || `${payload.notification?.title}-${payload.notification?.body}-${Date.now()}`;
+  const now = Date.now();
+  
+  // Check if we recently showed this exact notification (within last 5 seconds)
+  if (recentNotifications.has(notificationKey)) {
+    const lastShown = recentNotifications.get(notificationKey);
+    if (now - lastShown < 5000) {
+      console.log('[FCM SW] Duplicate notification detected, skipping:', notificationKey);
+      return;
+    }
+  }
+  
+  // Track this notification
+  recentNotifications.set(notificationKey, now);
+  
+  // Cleanup old entries
+  recentNotifications.forEach((timestamp, key) => {
+    if (now - timestamp > 10000) {
+      recentNotifications.delete(key);
+    }
+  });
+  
+  // Show notification with unique tag to prevent duplicates
+  const notificationTitle = payload.notification?.title || 'New Message';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: payload.notification.icon || '/favicon.svg',
-    data: payload.data
+    body: payload.notification?.body || '',
+    icon: '/favicon.svg',
+    data: payload.data,
+    tag: messageId || `msg-${now}`, // Unique tag per message
+    requireInteraction: false,
+    renotify: false, // Don't notify again if tag exists
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.showNotification(notificationTitle, notificationOptions)
+    .then(() => console.log('[FCM SW] Notification shown:', notificationTitle))
+    .catch(err => console.error('[FCM SW] Failed to show notification:', err));
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  console.log('[FCM SW] Notification clicked:', event);
+  event.notification.close();
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      if (clientList.length > 0) {
+        return clientList[0].focus();
+      }
+      return clients.openWindow('/');
+    })
+  );
 });

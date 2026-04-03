@@ -6,15 +6,51 @@ import { MessageSquare } from 'lucide-react';
 import Home from './pages/Home/Home';
 import Login from './pages/Login/Login';
 import Profile from './pages/Profile/Profile';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import { CallProvider } from './contexts/CallContext';
 import CallOverlay from './components/CallOverlay/CallOverlay';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import { onMessageListener, setupMessageListener } from './services/fcmService';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState('home');
+
+  // Listen for foreground FCM messages
+  useEffect(() => {
+    if (!user) return;
+
+    // Set up the message listener for foreground messages
+    const unsubscribe = setupMessageListener((payload) => {
+      console.log('[FCM] Message received in foreground:', payload);
+      
+      // Show notification manually when app is in foreground
+      if (Notification.permission === 'granted') {
+        const { title, body } = payload.notification || {};
+        const data = payload.data || {};
+        
+        // Create unique tag to prevent duplicates
+        const tag = `foreground-${data.senderId || Date.now()}`;
+        
+        // Check if we should show this notification (don't show for own messages)
+        const currentUserId = user._id || user.id;
+        if (data.senderId && data.senderId !== currentUserId) {
+          new Notification(title || 'New Message', {
+            body: body || 'You have a new message',
+            icon: '/favicon.svg',
+            tag: tag,
+            requireInteraction: false,
+            data: data
+          });
+        }
+      }
+    });
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [user]);
+
  useEffect(() => {
     if (!user) return;
 
@@ -127,6 +163,31 @@ function App() {
           </ChatProvider>
         </SocketProvider>
       </CallProvider>
+      <style>
+        {`
+          /* Always visible menu for sent messages (right side) */
+          .message-actions-container {
+            right: -8px;
+            top: -8px;
+            transform: none;
+            opacity: 1 !important;
+          }
+
+          /* Always visible menu for received messages - INSIDE bubble top-right */
+          .message-actions-container.received {
+            right: 4px;
+            left: auto;
+            top: 4px;
+            transform: none;
+            opacity: 1 !important;
+          }
+
+          /* Ensure button is always visible */
+          .message-actions-btn {
+            opacity: 1 !important;
+          }
+        `}
+      </style>
       <ToastContainer
         position="top-right"
         autoClose={3000}

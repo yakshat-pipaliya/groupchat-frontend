@@ -32,6 +32,28 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
     setShowMenu(false);
   };
 
+  // Handle download with forced download behavior
+  const handleDownload = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   const formatFileSize = (bytes) => {
     if (!bytes) return "";
     if (bytes < 1024) return bytes + " B";
@@ -89,6 +111,16 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
             alt={message.file.name}
             onClick={() => window.open(message.file.url, '_blank')}
           />
+          <button 
+            className="download-btn"
+            title="Download image"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(message.file.url, message.file.name || 'image.jpg');
+            }}
+          >
+            <Download size={16} />
+          </button>
         </div>
       );
     }
@@ -101,6 +133,16 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
             <source src={message.file.url} type={sourceType || undefined} />
             Your browser does not support the video tag.
           </video>
+          <button 
+            className="download-btn"
+            title="Download video"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(message.file.url, message.file.name || 'video.mp4');
+            }}
+          >
+            <Download size={16} />
+          </button>
         </div>
       );
     }
@@ -113,6 +155,16 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
             <source src={message.file.url} type={sourceType || undefined} />
             Your browser does not support the audio element.
           </audio>
+          <button 
+            className="download-btn audio-download"
+            title="Download audio"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(message.file.url, message.file.name || 'audio.mp3');
+            }}
+          >
+            <Download size={16} />
+          </button>
         </div>
       );
     }
@@ -124,9 +176,12 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
           <div>{message.file.name}</div>
           <small>{formatFileSize(message.file.size)}</small>
         </div>
-        <a href={message.file.url} download>
+        <button 
+          className="download-btn"
+          onClick={() => handleDownload(message.file.url, message.file.name || 'document')}
+        >
           <Download size={16} />
-        </a>
+        </button>
       </div>
     );
   };
@@ -199,6 +254,29 @@ const Message = ({ message, isCurrentUser, onDelete }) => {
               </button>
               <button onClick={() => handleDelete(true)}>
                 <Trash2 size={14} /> Delete for all
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Actions for received messages - only Delete for me */}
+      {!isCurrentUser && (
+        <div className="message-actions-container received" ref={menuRef}>
+          <button
+            className="message-actions-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+          >
+            <MoreVertical size={16} />
+          </button>
+
+          {showMenu && (
+            <div className="message-menu">
+              <button onClick={() => handleDelete(false)}>
+                <Trash2 size={14} /> Delete for me
               </button>
             </div>
           )}

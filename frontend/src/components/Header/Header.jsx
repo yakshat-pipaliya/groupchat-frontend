@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, User, LogOut } from 'lucide-react';
+import { Search, Plus, User, LogOut, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import './Header.css';
 
@@ -12,6 +12,10 @@ const Header = ({ searchQuery, onSearchChange, loading, onCreateClick, onProfile
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleClearSearch = () => {
+    onSearchChange('');
   };
 
   return (
@@ -45,6 +49,15 @@ const Header = ({ searchQuery, onSearchChange, loading, onCreateClick, onProfile
           className="header-search-input"
           disabled={loading}
         />
+        {searchQuery && (
+          <button 
+            className="search-clear-btn" 
+            onClick={handleClearSearch}
+            title="Clear search"
+          >
+            <X size={16} />
+          </button>
+        )}
         {loading && <div className="search-loading">...</div>}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -76,14 +76,31 @@ export const getFCMToken = async () => {
   }
 };
 
-export const onMessageListener = () => {
+export const setupMessageListener = (callback) => {
   if (!messaging) {
-    return Promise.resolve(null);
+    console.log('Firebase messaging is not available for listener');
+    return () => {};
   }
 
+  // Set up the message listener
+  const unsubscribe = onMessage(messaging, (payload) => {
+    console.log('Foreground message received:', payload);
+    callback(payload);
+  });
+
+  // Return unsubscribe function
+  return unsubscribe;
+};
+
+// Legacy function for compatibility
+export const onMessageListener = () => {
   return new Promise((resolve) => {
-    const unsubscribe = messaging.onMessage((payload) => {
-      console.log('Foreground message received:', payload);
+    if (!messaging) {
+      resolve(null);
+      return;
+    }
+    
+    const unsubscribe = onMessage(messaging, (payload) => {
       resolve(payload);
       unsubscribe();
     });
