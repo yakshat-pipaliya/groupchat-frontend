@@ -582,7 +582,7 @@ export const ChatProvider = ({ children }) => {
       }));
 
       if (activeChat?.type === 'private' && activeChat.id === senderId) {
-        markAsRead(activeChat.id);
+        markAsRead(activeChat.id, true);
       }
     };
 
@@ -693,7 +693,7 @@ export const ChatProvider = ({ children }) => {
       }));
 
       if (activeChat?.type === 'group' && activeChat.id === groupId && !isCurrentUsersMessage) {
-        markAsRead(groupId);
+        markAsRead(groupId, true);
       }
 
       if (!data?._id && activeChat?.type === 'group' && activeChat.id === groupId) {
@@ -1055,13 +1055,11 @@ export const ChatProvider = ({ children }) => {
     }));
   }, [authToken, chats, getMessageTypeFromFile, sendGroupMessage, sendSocketMessage]);
 
-  const markAsRead = useCallback((chatId) => {
+  const markAsRead = useCallback((chatId, forceEmit = false) => {
     const chat = chatsRef.current.find(c => c.id === chatId);
     if (!chat) return;
 
     const otherUserId = chat.type === 'private' ? chat.participants[0] : chatId;
-    const now = Date.now();
-    const lastEmitAt = lastReadEmitRef.current[otherUserId] || 0;
     const chatMessages = messagesRef.current[otherUserId] || messagesRef.current[chatId] || [];
     const hasUnreadIncomingMessages = chatMessages.some(msg => {
       const isReceivedMessage =
@@ -1070,12 +1068,19 @@ export const ChatProvider = ({ children }) => {
       return isReceivedMessage && !msg.isRead;
     });
 
-    if (chat.type === 'private' && (hasUnreadIncomingMessages || now - lastEmitAt > 1500)) {
-      lastReadEmitRef.current[otherUserId] = now;
-      socketMarkAsRead(otherUserId);
-    } else if (chat.type === 'group' && (hasUnreadIncomingMessages || now - lastEmitAt > 1500)) {
-      lastReadEmitRef.current[otherUserId] = now;
-      markGroupMessagesAsRead(chatId);
+    const shouldEmit = forceEmit || hasUnreadIncomingMessages;
+
+    if (shouldEmit) {
+      if (lastReadEmitRef.current[otherUserId]) {
+        clearTimeout(lastReadEmitRef.current[otherUserId]);
+      }
+      lastReadEmitRef.current[otherUserId] = setTimeout(() => {
+        if (chat.type === 'private') {
+          socketMarkAsRead(otherUserId);
+        } else if (chat.type === 'group') {
+          markGroupMessagesAsRead(chatId);
+        }
+      }, 500);
     }
 
     setChats(prev => prev.map(chatItem => {
