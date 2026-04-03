@@ -106,14 +106,23 @@ export const CallProvider = ({ children }) => {
   };
 
   const setupPeer = async (roomId, targetId, isRecv, socket) => {
+    // Prevent recreating peer connection if one already exists
+    if (peerConnRef.current) {
+      console.log('[CallContext] Peer connection already exists, skipping setup');
+      return;
+    }
+    
     const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
     peerConnRef.current = pc;
+    console.log('[CallContext] Peer connection created, isRecv:', isRecv);
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current));
+      console.log('[CallContext] Added local tracks:', localStreamRef.current.getTracks().length);
     }
 
     pc.ontrack = (e) => {
+      console.log('[CallContext] ontrack fired, streams:', e.streams.length, 'tracks:', e.streams[0]?.getTracks().length);
       setRemoteStream(e.streams[0]);
       setCallStatus('active');
     };
@@ -122,10 +131,15 @@ export const CallProvider = ({ children }) => {
       if (e.candidate) socket.emit('webrtc_ice_candidate', { roomId, candidate: e.candidate, targetUserId: targetId });
     };
 
+    pc.onconnectionstatechange = () => {
+      console.log('[CallContext] Connection state:', pc.connectionState);
+    };
+
     if (!isRecv) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       socket.emit('webrtc_offer', { roomId, offer, targetUserId: targetId });
+      console.log('[CallContext] Offer sent to:', targetId);
     }
   };
 
@@ -182,8 +196,8 @@ export const CallProvider = ({ children }) => {
     });
 
     socket.on('call_accepted', async (d) => {
+      console.log('[CallContext] Call accepted by:', d.receiverId);
       setCallStatus('connecting');
-      // Update activeCall with roomId from backend
       updateActiveCall(prev => ({ ...prev, roomId: d.roomId, targetId: d.receiverId }));
       await setupPeer(d.roomId, d.receiverId, false, socket);
     });
@@ -198,24 +212,41 @@ export const CallProvider = ({ children }) => {
     socket.on('call_ended', () => resetCallStates());
 
     socket.on('webrtc_offer', async (d) => {
-      if (!peerConnRef.current) await setupPeer(d.roomId, d.senderId, true, socket);
-      await peerConnRef.current.setRemoteDescription(new RTCSessionDescription(d.offer));
-      const answer = await peerConnRef.current.createAnswer();
-      await peerConnRef.current.setLocalDescription(answer);
-      socket.emit('webrtc_answer', { roomId: d.roomId, answer, targetUserId: d.senderId });
+      try {
+        console.log('[CallContext] Received webrtc_offer from:', d.senderId);
+        // Only create peer if it doesn't exist
+        if (!peerConnRef.current) {
+          await setupPeer(d.roomId, d.senderId, true, socket);
+        }
+        const pc = peerConnRef.current;
+        if (!pc) return;
+        
+        await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
+        console.log('[CallContext] Set remote description (offer)');
+        
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('webrtc_answer', { roomId: d.roomId, answer, targetUserId: d.senderId });
+        console.log('[CallContext] Answer sent to:', d.senderId);
+      } catch (err) {
+        console.error('[CallContext] Error handling webrtc_offer:', err);
+      }
     });
 
     socket.on('webrtc_answer', async (d) => {
       try {
-        if (peerConnRef.current) {
-          await peerConnRef.current.setRemoteDescription(new RTCSessionDescription(d.answer));
-          if (peerConnRef.current.candidateQueue) {
-            peerConnRef.current.candidateQueue.forEach(c => peerConnRef.current.addIceCandidate(new RTCIceCandidate(c)).catch(console.warn));
-            peerConnRef.current.candidateQueue = [];
+        const pc = peerConnRef.current;
+        if (pc) {
+          console.log('[CallContext] Received webrtc_answer, setting remote description');
+          await pc.setRemoteDescription(new RTCSessionDescription(d.answer));
+          console.log('[CallContext] Remote description (answer) set successfully');
+          if (pc.candidateQueue) {
+            pc.candidateQueue.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)).catch(console.warn));
+            pc.candidateQueue = [];
           }
         }
       } catch (err) {
-        console.error('Error setting remote answer:', err);
+        console.error('[CallContext] Error setting remote answer:', err);
       }
     });
 
