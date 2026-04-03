@@ -3,15 +3,25 @@ importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js');
 
 // Initialize Firebase in the service worker
+// firebase.initializeApp({
+//   apiKey: "AIzaSyDIr-SSna8YAnsQI7FpBdWPWKUP5ZGXxlY",
+//   authDomain: "fir-test-55401.firebaseapp.com",
+//   databaseURL: "https://fir-test-55401-default-rtdb.firebaseio.com",
+//   projectId: "fir-test-55401",
+//   storageBucket: "fir-test-55401.firebasestorage.app",
+//   messagingSenderId: "746089020187",
+//   appId: "1:746089020187:web:1e1c8fb701e5d0192a71be",
+//   measurementId: "G-JRYRF45FJ2"
+// });
+
 firebase.initializeApp({
-  apiKey: "AIzaSyDIr-SSna8YAnsQI7FpBdWPWKUP5ZGXxlY",
-  authDomain: "fir-test-55401.firebaseapp.com",
-  databaseURL: "https://fir-test-55401-default-rtdb.firebaseio.com",
-  projectId: "fir-test-55401",
-  storageBucket: "fir-test-55401.firebasestorage.app",
-  messagingSenderId: "746089020187",
-  appId: "1:746089020187:web:1e1c8fb701e5d0192a71be",
-  measurementId: "G-JRYRF45FJ2"
+  apiKey: "AIzaSyAt8jhL3ugh_Fuc9lbS1Nv1wG5hemSX0qk",
+  authDomain: "groupchat-d3e5f.firebaseapp.com",
+  projectId: "groupchat-d3e5f",
+  storageBucket: "groupchat-d3e5f.firebasestorage.app",
+  messagingSenderId: "617052407292",
+  appId: "1:617052407292:web:1f94f7a4d93e397ab8de79",
+  measurementId: "G-B5EWX9BMR9"
 });
 
 const messaging = firebase.messaging();
