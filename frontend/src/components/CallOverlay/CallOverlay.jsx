@@ -20,7 +20,21 @@ const CallOverlay = () => {
     endGroupCall
   } = useCall();
 
-  // Removed video refs in favor of inline assignment
+  const remoteVideoRef = useRef(null);
+  const localVideoRef = useRef(null);
+
+  // Update video srcObject when streams change
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
 
   if (!incomingCall && !activeCall) return null;
 
@@ -71,7 +85,7 @@ const CallOverlay = () => {
           <>
             {isVideo && (
               <video
-                ref={el => { if(el) el.srcObject = remoteStream; }}
+                ref={remoteVideoRef}
                 autoPlay
                 playsInline
                 className={`remote-video ${!remoteStream ? 'hidden' : ''}`}
@@ -84,7 +98,7 @@ const CallOverlay = () => {
             )}
             {(localStream && isVideo) && (
               <video
-                ref={el => { if(el) el.srcObject = localStream; }}
+                ref={localVideoRef}
                 autoPlay
                 muted
                 playsInline
