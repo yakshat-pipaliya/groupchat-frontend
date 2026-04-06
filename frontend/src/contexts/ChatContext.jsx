@@ -1036,7 +1036,7 @@ export const ChatProvider = ({ children }) => {
         const formData = new FormData();
         formData.append('image', file);
 
-        const response = await fetch('http://43.205.140.113:3000/chatmedia/upload', {
+        const response = await fetch('https://groupchat-backend-2.onrender.com/chatmedia/upload', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`

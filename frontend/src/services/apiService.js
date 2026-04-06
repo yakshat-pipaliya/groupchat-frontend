@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API service for authentication
-const API_BASE_URL = 'http://43.205.140.113:3000';
+const API_BASE_URL = 'https://groupchat-backend-2.onrender.com';
 
 // Create axios instance
 const api = axios.create({

@@ -175,7 +175,7 @@ export const CallProvider = ({ children }) => {
 
     const API_BASE_URL = import.meta.env.VITE_SOCKET_URL 
       ? import.meta.env.VITE_SOCKET_URL.replace('/one-one-chat', '')
-      : 'http://43.205.140.113:3000';
+      : 'https://groupchat-backend-2.onrender.com';
 
     const socket = io(`${API_BASE_URL}/call`, {
       auth: { token },

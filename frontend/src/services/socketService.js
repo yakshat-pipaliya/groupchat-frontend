@@ -1,9 +1,9 @@
 import { io } from 'socket.io-client';
 
 const PRIVATE_SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || 'http://43.205.140.113:3000/one-one-chat';
+  import.meta.env.VITE_SOCKET_URL || 'https://groupchat-backend-2.onrender.com/one-one-chat';
 const GROUP_SOCKET_URL =
-  import.meta.env.VITE_GROUP_SOCKET_URL || 'http://43.205.140.113:3000/groupchat';
+  import.meta.env.VITE_GROUP_SOCKET_URL || 'https://groupchat-backend-2.onrender.com/groupchat';
 
 class SocketService {
   constructor() {
