@@ -175,7 +175,7 @@ export const CallProvider = ({ children }) => {
 
     const API_BASE_URL = import.meta.env.VITE_SOCKET_URL 
       ? import.meta.env.VITE_SOCKET_URL.replace('/one-one-chat', '')
-      : 'https://gh802w59-3000.inc1.devtunnels.ms';
+      : 'http://43.205.140.113:3000';
 
     const socket = io(`${API_BASE_URL}/call`, {
       auth: { token },

@@ -1036,7 +1036,7 @@ export const ChatProvider = ({ children }) => {
         const formData = new FormData();
         formData.append('image', file);
 
-        const response = await fetch('https://gh802w59-3000.inc1.devtunnels.ms/chatmedia/upload', {
+        const response = await fetch('http://43.205.140.113:3000/chatmedia/upload', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`
